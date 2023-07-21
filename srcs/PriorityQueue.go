@@ -3,6 +3,7 @@ package main
 import (
 	"container/heap"
 	"fmt"
+	"os"
 )
 
 type Item struct {
@@ -23,11 +24,11 @@ func (pq PriorityQueue) Less(i, j int) bool {
 func (pq PriorityQueue) Swap(i, j int) {
 
 	if i < 0 || j < 0 {
-		fmt.Printf("swap with index i:%d, j:%d. Len is %d\n", i, j, pq.Len())
+		fmt.Fprintf(os.Stderr, "swap with index i:%d, j:%d. Len is %d\n", i, j, pq.Len())
 	}
 	pq[i], pq[j] = pq[j], pq[i]
 	if i < 0 || j < 0 {
-		fmt.Printf("swap ok with index i:%d, j:%d. Len is %d\n", i, j, pq.Len())
+		fmt.Fprintf(os.Stderr, "swap OK with index i:%d, j:%d. Len is %d\n", i, j, pq.Len())
 	}
 	pq[i].index = i
 	pq[j].index = j

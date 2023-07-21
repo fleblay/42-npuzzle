@@ -13,7 +13,7 @@ import (
 	"github.com/shirou/gopsutil/v3/mem"
 )
 
-func handleError(err error) {
+func handleFatalError(err error) {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error :", err.Error())
 		os.Exit(1)
@@ -87,7 +87,7 @@ func handleSignals() {
 	signal.Notify(sigc, os.Interrupt, os.Kill, syscall.SIGINT, syscall.SIGTERM, syscall.SIGABRT, syscall.SIGQUIT, syscall.SIGKILL)
 	go func() {
 		<-sigc
-		fmt.Println("\b\bExiting after receiving a signal")
+		fmt.Fprintln(os.Stderr, "\b\bExiting after receiving a signal")
 		os.Exit(1)
 	}()
 }
@@ -144,28 +144,32 @@ func parseFlags(opt *option) {
 	flag.Parse()
 }
 
+func initOptionForApiUse(opt *option) {
+	opt.filename = "/dev/stdin"
+	opt.disableUI = true
+	opt.heuristic = "astar_manhattan"
+	opt.noIterativeDepth = true
+	opt.workers = 4
+	opt.seenNodesSplit = 16
+}
+
 func solve(cli bool) (result []string) {
-	var (
-		opt   option
-		param algoParameters
-	)
+	param := algoParameters{}
+	opt := &option{}
 	if cli {
-		parseFlags(&opt)
+		parseFlags(opt)
 	} else {
-		opt.filename = "/dev/stdin"
-		opt.disableUI = true
-		opt.heuristic = "astar_manhattan"
-		opt.noIterativeDepth = true
-		opt.workers = 4
-		opt.seenNodesSplit = 16
+		initOptionForApiUse(opt)
 	}
-	err := areFlagsOk(&opt)
-	handleError(err)
-	err = setParam(&opt, &param)
-	handleError(err)
+	if err := areFlagsOk(opt); err != nil {
+		return []string{"FLAGS", err.Error()}
+	}
+	if err := setParam(opt, &param); err != nil {
+		return []string{"PARAM", err.Error()}
+	}
 	if param.unsolvable {
 		fmt.Fprintln(os.Stderr, "Board is unsolvable", param.board)
-		return []string{"unsolvable"}
+		return []string{"UNSOLVABLE"}
 	}
 	fmt.Fprintf(os.Stderr, "Board is : %v\nNow starting with : %v\n", param.board, param.eval.name)
 	data := initData(param)
@@ -192,6 +196,5 @@ func solve(cli bool) (result []string) {
 func main() {
 	handleSignals()
 	cmdline := true
-	fmt.Println(solve(cmdline))
 	fmt.Println(solve(cmdline))
 }

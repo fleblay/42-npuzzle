@@ -133,9 +133,8 @@ func terminateSearch(data *safeData, solutionPath []byte, score int) {
 func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, currentNode *Item, data *safeData, index int, workers int, seenNodesSplit int, maxScore int) {
 	if data.tries%1000 == 0 {
 		availableRAM, err := getAvailableRAM()
-		handleError(err)
-		if availableRAM>>20 < minRAMAvailableMB {
-			fmt.Println("Not enough RAM to continue, try with another heuristic")
+		if availableRAM>>20 < minRAMAvailableMB || err != nil{
+			fmt.Fprintf(os.Stderr, "[%d] - Not enough RAM to continue or Fatal (error reading RAM status)", index)
 			data.mu.Lock()
 			data.ramFailure = true
 			data.mu.Unlock()
@@ -166,24 +165,6 @@ func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, curren
 			data.seenNodes[seenNodeIndex][keyNode] = score
 			data.muSeen[seenNodeIndex].Unlock()
 		}
-	}
-}
-
-func noMoreNodesToExplore(data *safeData) bool {
-	data.mu.Lock()
-	totalLen := 0
-	for i := range data.posQueue {
-		data.muQueue[i].Lock()
-		length := data.posQueue[i].Len()
-		totalLen += length
-		data.muQueue[i].Unlock()
-	}
-	data.mu.Unlock()
-	if totalLen == 0 {
-		fmt.Fprintln(os.Stderr, "all queues are empty. Leaving")
-		return true
-	} else {
-		return false
 	}
 }
 
