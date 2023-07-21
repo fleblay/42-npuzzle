@@ -132,16 +132,19 @@ Iteration:
 }
 
 func parseFlags(opt *option) {
-	flag.StringVar(&opt.filename, "f", "", "usage : -f [filename]")
-	flag.IntVar(&opt.mapSize, "s", 3, "usage : -s [board_size]")
-	flag.StringVar(&opt.heuristic, "h", "astar_manhattan", "usage : -h [heuristic]")
-	flag.IntVar(&opt.workers, "w", 1, "usage : -w [workers] between 1 and 16")
-	flag.IntVar(&opt.seenNodesSplit, "split", 1, "usage : -split [setNodesSplit] between 1 and 256")
-	flag.IntVar(&opt.speedDisplay, "speed", 100, "usage : -speed [speedDisplay] between 1 and 2048")
-	flag.BoolVar(&opt.noIterativeDepth, "no-i", false, "usage : -no-i. Use A* instead of Iterative Depth A* (aka IDA*). Faster but increase memory consumption")
-	flag.BoolVar(&opt.debug, "d", false, "usage : -d. Activate debug info")
-	flag.BoolVar(&opt.disableUI, "no-ui", false, "usage : -no-ui. Disable pretty display of solution")
-	flag.Parse()
+	flagSet := &flag.FlagSet{}
+	flagSet.SetOutput(os.Stderr)
+
+	flagSet.StringVar(&opt.filename, "f", "", "usage : -f [filename]")
+	flagSet.IntVar(&opt.mapSize, "s", 3, "usage : -s [board_size]")
+	flagSet.StringVar(&opt.heuristic, "h", "astar_manhattan", "usage : -h [heuristic]")
+	flagSet.IntVar(&opt.workers, "w", 1, "usage : -w [workers] between 1 and 16")
+	flagSet.IntVar(&opt.seenNodesSplit, "split", 1, "usage : -split [setNodesSplit] between 1 and 256")
+	flagSet.IntVar(&opt.speedDisplay, "speed", 100, "usage : -speed [speedDisplay] between 1 and 2048")
+	flagSet.BoolVar(&opt.noIterativeDepth, "no-i", false, "usage : -no-i. Use A* instead of Iterative Depth A* (aka IDA*). Faster but increase memory consumption")
+	flagSet.BoolVar(&opt.debug, "d", false, "usage : -d. Activate debug info")
+	flagSet.BoolVar(&opt.disableUI, "no-ui", false, "usage : -no-ui. Disable pretty display of solution")
+	flagSet.Parse(os.Args[1:])
 }
 
 func initOptionForApiUse(opt *option) {
@@ -149,7 +152,7 @@ func initOptionForApiUse(opt *option) {
 	opt.disableUI = true
 	opt.heuristic = "astar_manhattan"
 	opt.noIterativeDepth = true
-	opt.workers = 4
+	opt.workers = 1000
 	opt.seenNodesSplit = 16
 }
 
