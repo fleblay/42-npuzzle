@@ -7,6 +7,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"strings"
@@ -14,6 +15,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/shirou/gopsutil/v3/mem"
 )
 
@@ -211,7 +213,28 @@ func solve(cli bool, stringInput string) (result []string) {
 	return []string{"END"}
 }
 
+type solveRequest struct {
+	Size  int `json:"size"`
+	Board string `json:"board"`
+}
+
 func main() {
 	handleSignals()
+
+	router := gin.Default()
+	router.GET("/", func(c *gin.Context) {
+		c.IndentedJSON(http.StatusOK, gin.H{"msg": "Hello world"})
+	})
+
+	//curl -X POST --data '{"size":3,"board":"1 2 3 4 5 6 7 8 0"}' localhost:8080
+	router.POST("/", func(c *gin.Context) {
+		var newRequest solveRequest
+		if err := c.BindJSON(&newRequest); err != nil {
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"msg": "Wrong Format : " + err.Error()})
+		}
+		fmt.Println(newRequest)
+	})
+
+	router.Run("localhost:8080")
 	fmt.Println(solve(false, "3 1 2 3 4 5 6 8 7 0"))
 }
