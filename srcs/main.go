@@ -8,6 +8,7 @@ import (
 	"sync"
 	"syscall"
 	"time"
+	"github.com/shirou/gopsutil/v3/mem"
 )
 
 func areFlagsOk(workers int, seenNodesSplit int, heuristic string, mapSize int) (fx eval, ok bool) {
@@ -43,12 +44,11 @@ func handleSignals() {
 }
 
 func getAvailableRAM() (uint64, error) {
-	var info syscall.Sysinfo_t
-	err := syscall.Sysinfo(&info)
+	v, err :=  mem.VirtualMemory()
 	if err != nil {
 		return 0, fmt.Errorf("Error while getting info about memory: %v", err)
 	}
-	availableRAM := info.Freeram*uint64(info.Unit) + info.Bufferram*uint64(info.Unit)
+	availableRAM := v.Free
 	return availableRAM, nil
 }
 
