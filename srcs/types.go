@@ -41,6 +41,7 @@ type option struct {
 	noIterativeDepth bool
 	debug            bool
 	disableUI        bool
+	stringInput      string
 }
 
 type algoParameters struct {
@@ -65,7 +66,7 @@ type safeData struct {
 	path                []byte
 	over                bool
 	win                 bool
-	ramFailure			bool
+	ramFailure          bool
 	winScore            int
 	idle                int
 	closedSetComplexity int

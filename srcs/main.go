@@ -1,11 +1,15 @@
+// os.exit a remove
+// generator avec une map size a remove
 package main
 
 import (
+	"bufio"
 	"errors"
 	"flag"
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -27,7 +31,7 @@ func areFlagsOk(opt *option) (err error) {
 	if opt.seenNodesSplit < 1 || opt.seenNodesSplit > 256 {
 		return errors.New("Invalid number of splits")
 	}
-	if opt.filename == "" && (opt.mapSize < 3 || opt.mapSize > 10) {
+	if opt.filename == "" && opt.stringInput == "" && (opt.mapSize < 3 || opt.mapSize > 10) {
 		return errors.New("Invalid map size")
 	}
 	for _, current := range evals {
@@ -61,12 +65,21 @@ func setParam(opt *option, param *algoParameters) (err error) {
 		if err != nil {
 			return err
 		}
-		param.board = ParseInput(opt.fd)
+		scanner := bufio.NewScanner(opt.fd)
+		param.board, err = ParseInput(scanner)
+		opt.fd.Close()
+	} else if opt.stringInput != "" {
+		fmt.Fprintln(os.Stderr, "Reading from provided string", opt.stringInput)
+		scanner := bufio.NewScanner(strings.NewReader(opt.stringInput))
+		param.board, err = ParseInput(scanner)
 	} else if opt.mapSize > 0 {
 		fmt.Fprintln(os.Stderr, "Generating a map with size", opt.mapSize)
 		param.board = gridGenerator(opt.mapSize)
 	} else {
 		return errors.New("No valid map size or filename option missing")
+	}
+	if err != nil {
+		return err
 	}
 	if !isSolvable(param.board) {
 		fmt.Fprintln(os.Stderr, "Board is not solvable")
@@ -136,6 +149,7 @@ func parseFlags(opt *option) {
 	flagSet.SetOutput(os.Stderr)
 
 	flagSet.StringVar(&opt.filename, "f", "", "usage : -f [filename]")
+	flagSet.StringVar(&opt.stringInput, "string", "", "usage : -string [input as a string]. Ex : '3 1 2 3 4 5 6 8 7 0'")
 	flagSet.IntVar(&opt.mapSize, "s", 3, "usage : -s [board_size]")
 	flagSet.StringVar(&opt.heuristic, "h", "astar_manhattan", "usage : -h [heuristic]")
 	flagSet.IntVar(&opt.workers, "w", 1, "usage : -w [workers] between 1 and 16")
@@ -144,25 +158,26 @@ func parseFlags(opt *option) {
 	flagSet.BoolVar(&opt.noIterativeDepth, "no-i", false, "usage : -no-i. Use A* instead of Iterative Depth A* (aka IDA*). Faster but increase memory consumption")
 	flagSet.BoolVar(&opt.debug, "d", false, "usage : -d. Activate debug info")
 	flagSet.BoolVar(&opt.disableUI, "no-ui", false, "usage : -no-ui. Disable pretty display of solution")
+
 	flagSet.Parse(os.Args[1:])
 }
 
 func initOptionForApiUse(opt *option) {
-	opt.filename = "/dev/stdin"
 	opt.disableUI = true
 	opt.heuristic = "astar_manhattan"
 	opt.noIterativeDepth = true
-	opt.workers = 1000
+	opt.workers = 4
 	opt.seenNodesSplit = 16
 }
 
-func solve(cli bool) (result []string) {
+func solve(cli bool, stringInput string) (result []string) {
 	param := algoParameters{}
 	opt := &option{}
 	if cli {
 		parseFlags(opt)
 	} else {
 		initOptionForApiUse(opt)
+		opt.stringInput = stringInput
 	}
 	if err := areFlagsOk(opt); err != nil {
 		return []string{"FLAGS", err.Error()}
@@ -198,6 +213,5 @@ func solve(cli bool) (result []string) {
 
 func main() {
 	handleSignals()
-	cmdline := true
-	fmt.Println(solve(cmdline))
+	fmt.Println(solve(false, "3 1 2 3 4 5 6 8 7 0"))
 }
