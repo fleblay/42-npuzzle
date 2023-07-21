@@ -12,23 +12,22 @@ type Board struct {
 	Board [][]int
 }
 
-func OpenFile(filename string) *os.File {
-	file, err := os.Open(filename)
+func OpenFile(filename string) (fd *os.File, err error) {
+	fd, err = os.Open(filename)
 	if err != nil {
-		fmt.Println("Error opening file")
-		os.Exit(1)
+		return nil, err
 	}
-	return file
+	return fd, nil
 }
 
-func ParseInput(file *os.File) (size int, board [][]int) {
+func ParseInput(file *os.File) (board [][]int) {
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
 	inputArray := readInputArray(scanner)
-	size = extractSize(inputArray)
+	size := extractSize(inputArray)
 	board = createBoard(size, inputArray)
 	file.Close()
-	return size, board
+	return board
 }
 
 func alreadyInArray(array []int, num int) bool {

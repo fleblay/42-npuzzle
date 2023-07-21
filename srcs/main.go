@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -8,29 +9,77 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
 	"github.com/shirou/gopsutil/v3/mem"
 )
 
-func areFlagsOk(workers int, seenNodesSplit int, heuristic string, mapSize int) (fx eval, ok bool) {
-	if workers < 1 || workers > 16 {
-		fmt.Println("Invalid number of workers")
+func handleError(err error) {
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error :", err.Error())
 		os.Exit(1)
 	}
-	if seenNodesSplit < 1 || seenNodesSplit > 64 {
-		fmt.Println("Invalid number of splits")
-		os.Exit(1)
+}
+
+func areFlagsOk(opt *option) (err error) {
+	if opt.workers < 1 || opt.workers > 16 {
+		return errors.New("Invalid number of workers")
 	}
-	if mapSize < 3 || mapSize > 10 {
-		fmt.Println("Invalid map size")
-		os.Exit(1)
+	if opt.seenNodesSplit < 1 || opt.seenNodesSplit > 256 {
+		return errors.New("Invalid number of splits")
+	}
+	if opt.filename == "" && (opt.mapSize < 3 || opt.mapSize > 10) {
+		return errors.New("Invalid map size")
 	}
 	for _, current := range evals {
-		if current.name == heuristic {
-			return current, true
+		if current.name == opt.heuristic {
+			return nil
 		}
 	}
-	fmt.Println("Invalid heuristic")
-	return eval{}, false
+	return errors.New("Invalid heuristic")
+}
+
+func setParam(opt *option, param *algoParameters) (err error) {
+	param.workers = opt.workers
+	param.seenNodesSplit = opt.seenNodesSplit
+	for _, current := range evals {
+		if current.name == opt.heuristic {
+			param.eval = current
+			break
+		}
+	}
+	if !opt.debug {
+		newstderr, err := os.Open("/dev/null")
+		if err != nil {
+			return err
+		}
+		defer newstderr.Close()
+		os.Stderr = newstderr
+	}
+	if opt.filename != "" {
+		fmt.Fprintln(os.Stderr, "Opening user provided map in file", opt.filename)
+		opt.fd, err = OpenFile(opt.filename)
+		if err != nil {
+			return err
+		}
+		param.board = ParseInput(opt.fd)
+	} else if opt.mapSize > 0 {
+		fmt.Fprintln(os.Stderr, "Generating a map with size", opt.mapSize)
+		param.board = gridGenerator(opt.mapSize)
+	} else {
+		return errors.New("No valid map size or filename option missing")
+	}
+	if !isSolvable(param.board) {
+		fmt.Fprintln(os.Stderr, "Board is not solvable")
+		param.unsolvable = true
+	}
+	if !opt.noIterativeDepth {
+		fmt.Fprintln(os.Stderr, "Search Method : IDA*")
+		param.maxScore = param.eval.fx(param.board, param.board, goal(len(param.board)), []byte{}) + 1
+	} else {
+		fmt.Fprintln(os.Stderr, "Search Method : A*")
+		param.maxScore |= (1<<31 - 1)
+	}
+	return nil
 }
 
 func handleSignals() {
@@ -44,7 +93,7 @@ func handleSignals() {
 }
 
 func getAvailableRAM() (uint64, error) {
-	v, err :=  mem.VirtualMemory()
+	v, err := mem.VirtualMemory()
 	if err != nil {
 		return 0, fmt.Errorf("Error while getting info about memory: %v", err)
 	}
@@ -52,111 +101,97 @@ func getAvailableRAM() (uint64, error) {
 	return availableRAM, nil
 }
 
-func iterateAlgo(board [][]int, maxScore int, workers int, seenNodesSplit int, evalfx evalFx, data *safeData) {
+func iterateAlgo(param algoParameters, data *safeData) {
 	var wg sync.WaitGroup
 Iteration:
-	for maxScore < 1<<31 {
-		fmt.Fprintln(os.Stderr, "cut off is now :", maxScore)
-		for i := 0; i < workers; i++ {
+	for param.maxScore < 1<<31 {
+		if param.maxScore != 1<<31-1 {
+			fmt.Fprintln(os.Stderr, "cut off is now :", param.maxScore)
+		}
+		for i := 0; i < param.workers; i++ {
 			wg.Add(1)
-			go func(board [][]int, evalfx evalFx, data *safeData, i int, workers int, seenNodesSplit int, maxScore int) {
+			go func(param algoParameters, data *safeData, i int) {
 
-				algo(board, evalfx, data, i, workers, seenNodesSplit, maxScore)
+				algo(param, data, i)
 				wg.Done()
-			}(board, evalfx, data, i, workers, seenNodesSplit, maxScore)
+			}(param, data, i)
 		}
 		wg.Wait()
-		switch data.win {
-		case true:
+		switch {
+		case data.win == true:
 			fmt.Fprintln(os.Stderr, "Found a solution")
 			break Iteration
+		case data.ramFailure == true:
+			fmt.Fprintln(os.Stderr, "RAM Failure")
+			break Iteration
 		default:
-			*data = initData(board, workers, seenNodesSplit)
-			maxScore +=2
+			*data = initData(param)
+			param.maxScore += 2
 		}
 	}
 }
 
-func main() {
-	var (
-		file                string
-		mapSize             int
-		heuristic           string
-		workers             int
-		seenNodesSplit      int
-		speedDisplay        int
-		noIterativeDepth    bool
-		debug               bool
-		disableUI           bool
-		maxScore            int
-		closedSetComplexity int
-		board               [][]int
-	)
-
-	flag.StringVar(&file, "f", "", "usage : -f [filename]")
-	flag.IntVar(&mapSize, "s", 3, "usage : -s [size]")
-	flag.StringVar(&heuristic, "h", "astar_manhattan", "usage : -h [heuristic]")
-	flag.IntVar(&workers, "w", 1, "usage : -w [workers] between 1 and 16")
-	flag.IntVar(&seenNodesSplit, "split", 1, "usage : -split [setNodesSplit] between 1 and 32")
-	flag.IntVar(&speedDisplay, "speed", 100, "usage : -speed [speedDisplay] between 1 and 1000")
-	flag.BoolVar(&noIterativeDepth, "no-i", false, "usage : -no-i")
-	flag.BoolVar(&debug, "d", false, "usage : -d")
-	flag.BoolVar(&disableUI, "no-ui", false, "usage : -no-ui")
+func parseFlags(opt *option) {
+	flag.StringVar(&opt.filename, "f", "", "usage : -f [filename]")
+	flag.IntVar(&opt.mapSize, "s", 3, "usage : -s [board_size]")
+	flag.StringVar(&opt.heuristic, "h", "astar_manhattan", "usage : -h [heuristic]")
+	flag.IntVar(&opt.workers, "w", 1, "usage : -w [workers] between 1 and 16")
+	flag.IntVar(&opt.seenNodesSplit, "split", 1, "usage : -split [setNodesSplit] between 1 and 256")
+	flag.IntVar(&opt.speedDisplay, "speed", 100, "usage : -speed [speedDisplay] between 1 and 2048")
+	flag.BoolVar(&opt.noIterativeDepth, "no-i", false, "usage : -no-i. Use A* instead of Iterative Depth A* (aka IDA*). Faster but increase memory consumption")
+	flag.BoolVar(&opt.debug, "d", false, "usage : -d. Activate debug info")
+	flag.BoolVar(&opt.disableUI, "no-ui", false, "usage : -no-ui. Disable pretty display of solution")
 	flag.Parse()
+}
 
-	eval, ok := areFlagsOk(workers, seenNodesSplit, heuristic, mapSize)
-	if !ok {
-		os.Exit(1)
-	}
-	if !debug {
-		newstderr, _ := os.Open("/dev/null")
-		defer newstderr.Close()
-		os.Stderr = newstderr
-	}
-	if file != "" {
-		file := OpenFile(file)
-		fmt.Println("Opening user provided map in file", file.Name())
-		_, board = ParseInput(file)
-	} else if mapSize > 0 {
-		fmt.Println("Generating a map with size", mapSize)
-		board = gridGenerator(mapSize)
+func solve(cli bool) (result []string) {
+	var (
+		opt   option
+		param algoParameters
+	)
+	if cli {
+		parseFlags(&opt)
 	} else {
-		fmt.Println("No valid map size or filename option missing")
-		os.Exit(1)
+		opt.filename = "/dev/stdin"
+		opt.disableUI = true
+		opt.heuristic = "astar_manhattan"
+		opt.noIterativeDepth = true
+		opt.workers = 4
+		opt.seenNodesSplit = 16
 	}
-	if !isSolvable(board) {
-		fmt.Println("Board is not solvable")
-		if !disableUI {
-			displayBoard(board, []byte{}, eval.name, "", 0, 0, workers, seenNodesSplit, speedDisplay)
-		}
-		os.Exit(0)
+	err := areFlagsOk(&opt)
+	handleError(err)
+	err = setParam(&opt, &param)
+	handleError(err)
+	if param.unsolvable {
+		fmt.Fprintln(os.Stderr, "Board is unsolvable", param.board)
+		return []string{"unsolvable"}
 	}
-	fmt.Println("Board is :", board)
-	fmt.Println("Now starting with :", eval.name)
-	data := initData(board, workers, seenNodesSplit)
-	if !noIterativeDepth {
-		fmt.Println("Search Method : IDA*")
-		maxScore = eval.fx(board, board, goal(len(board)), []byte{}) + 1
-	} else {
-		fmt.Println("Search Method : A*")
-		maxScore |= (1<<31 - 1)
-	}
-	handleSignals()
+	fmt.Fprintf(os.Stderr, "Board is : %v\nNow starting with : %v\n", param.board, param.eval.name)
+	data := initData(param)
 	start := time.Now()
-	iterateAlgo(board, maxScore, workers, seenNodesSplit, eval.fx, &data)
+	iterateAlgo(param, &data)
 	end := time.Now()
 	elapsed := end.Sub(start)
 	if data.path != nil {
 		for _, value := range data.seenNodes {
-			closedSetComplexity += len(value)
+			data.closedSetComplexity += len(value)
 		}
-		fmt.Println("Succes with :", eval.name, "in ", elapsed.String(), "!")
-		fmt.Printf("len of solution : %v, time complexity / tries : %d, space complexity : %d, score : %d\n", len(data.path), data.tries, closedSetComplexity, data.winScore)
-		if !disableUI {
-			displayBoard(board, data.path, eval.name, elapsed.String(), data.tries, closedSetComplexity, workers, seenNodesSplit, speedDisplay)
+		fmt.Fprintln(os.Stderr, "Succes with :", param.eval.name, "in ", elapsed.String(), "!")
+		fmt.Fprintf(os.Stderr, "len of solution : %v, time complexity / tries : %d, space complexity : %d, score : %d\n", len(data.path), data.tries, data.closedSetComplexity, data.winScore)
+		if !opt.disableUI {
+			displayBoard(param.board, data.path, param.eval.name, elapsed.String(), data.tries, data.closedSetComplexity, param.workers, param.seenNodesSplit, opt.speedDisplay)
 		}
-		fmt.Println(string(data.path))
-	} else {
-		fmt.Println("No solution !")
+		return []string{"OK", string(data.path)}
+	} else if data.ramFailure {
+		return []string{"RAM"}
 	}
+	return []string{"END"}
+}
+
+func main() {
+	handleSignals()
+	cmdline := true
+	fmt.Println(solve(cmdline))
+	fmt.Println(solve(cmdline))
 }

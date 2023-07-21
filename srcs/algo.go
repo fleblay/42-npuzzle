@@ -8,16 +8,16 @@ import (
 	"time"
 )
 
-func initData(board [][]int, workers int, seenNodesSplit int) (data safeData) {
-	startPos := board
-	data.seenNodes = make([]map[string]int, seenNodesSplit)
-	keyNode, _, _ := matrixToStringSelector(startPos, workers, seenNodesSplit)
-	for i := 0; i < seenNodesSplit; i++ {
+func initData(param algoParameters) (data safeData) {
+	startPos := param.board
+	data.seenNodes = make([]map[string]int, param.seenNodesSplit)
+	keyNode, _, _ := matrixToStringSelector(startPos, param.workers, param.seenNodesSplit)
+	for i := 0; i < param.seenNodesSplit; i++ {
 		data.seenNodes[i] = make(map[string]int, 1000)
 		data.seenNodes[i][keyNode] = 0
 	}
-	data.posQueue = make([]*PriorityQueue, workers)
-	for i := 0; i < workers; i++ {
+	data.posQueue = make([]*PriorityQueue, param.workers)
+	for i := 0; i < param.workers; i++ {
 
 		queue := make(PriorityQueue, 1, 1000)
 		queue[0] = &Item{node: Node{world: startPos, score: 0, path: []byte{}}}
@@ -26,26 +26,30 @@ func initData(board [][]int, workers int, seenNodesSplit int) (data safeData) {
 	}
 	data.over = false
 	data.win = false
-	data.muQueue = make([]sync.Mutex, workers)
-	data.muSeen = make([]sync.Mutex, seenNodesSplit)
-	data.maxSizeQueue = make([]int, workers)
+	data.muQueue = make([]sync.Mutex, param.workers)
+	data.muSeen = make([]sync.Mutex, param.seenNodesSplit)
+	data.maxSizeQueue = make([]int, param.workers)
 	data.idle = 0
 	return
 }
 
-func algo(world [][]int, scoreFx evalFx, data *safeData, workerIndex int, workers int, seenNodesSplit int, maxScore int) {
-	goalPos := goal(len(world))
-	startPos := world
+func algo(param algoParameters, data *safeData, workerIndex int) {
+	goalPos := goal(len(param.board))
+	startPos := param.board
 	var foundSol *Item
 	startAlgo := time.Now()
 	isIdle := false
 	for {
-		over, tries, lenqueue, idle := refreshData(data, workerIndex)
+		over, tries, lenqueue, idle, ramFailure := refreshData(data, workerIndex)
+		if ramFailure {
+			fmt.Fprintf(os.Stderr, "[%2d] - Someone had a ram failure. Leaving now\n", workerIndex)
+			return
+		}
 		if over {
 			fmt.Fprintf(os.Stderr, "[%2d] - Someone ended sim. Leaving now\n", workerIndex)
 			return
 		}
-		if idle >= workers {
+		if idle >= param.workers {
 			fmt.Fprintf(os.Stderr, "[%2d] - Everyone is idle\n", workerIndex)
 			return
 		}
@@ -74,7 +78,7 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, workerIndex int, worker
 			data.mu.Unlock()
 			return
 		}
-		printInfo(workerIndex, tries, currentNode, startAlgo, lenqueue, maxScore)
+		printInfo(workerIndex, tries, currentNode, startAlgo, lenqueue, param.maxScore)
 		if isEqual(goalPos, currentNode.node.world) {
 			data.mu.Lock()
 			if checkOptimalSolution(currentNode, data) {
@@ -88,7 +92,7 @@ func algo(world [][]int, scoreFx evalFx, data *safeData, workerIndex int, worker
 				data.mu.Unlock()
 			}
 		}
-		getNextMoves(startPos, goalPos, scoreFx, currentNode.node.path, currentNode, data, workerIndex, workers, seenNodesSplit, maxScore)
+		getNextMoves(startPos, goalPos, param.eval.fx, currentNode.node.path, currentNode, data, workerIndex, param.workers, param.seenNodesSplit, param.maxScore)
 	}
 }
 
@@ -129,13 +133,13 @@ func terminateSearch(data *safeData, solutionPath []byte, score int) {
 func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, currentNode *Item, data *safeData, index int, workers int, seenNodesSplit int, maxScore int) {
 	if data.tries%1000 == 0 {
 		availableRAM, err := getAvailableRAM()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
+		handleError(err)
 		if availableRAM>>20 < minRAMAvailableMB {
 			fmt.Println("Not enough RAM to continue, try with another heuristic")
-			os.Exit(0)
+			data.mu.Lock()
+			data.ramFailure = true
+			data.mu.Unlock()
+			return
 		}
 	}
 	for _, dir := range directions {
@@ -183,13 +187,14 @@ func noMoreNodesToExplore(data *safeData) bool {
 	}
 }
 
-func refreshData(data *safeData, workerIndex int) (over bool, tries, lenqueue int, idle int) {
+func refreshData(data *safeData, workerIndex int) (over bool, tries, lenqueue int, idle int, ramFailure bool) {
 	data.mu.Lock()
 
 	data.tries++
 	tries = data.tries
 	over = data.over
 	idle = data.idle
+	ramFailure = data.ramFailure
 	data.mu.Unlock()
 	data.muQueue[workerIndex].Lock()
 	lenqueue = len(*data.posQueue[workerIndex])
