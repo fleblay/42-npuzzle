@@ -7,17 +7,21 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"net/http"
 	"os"
 	"os/signal"
 	"strings"
 	"sync"
 	"syscall"
 	"time"
-
-	"github.com/gin-gonic/gin"
 	"github.com/shirou/gopsutil/v3/mem"
 )
+/*
+import (
+	"net/http"
+	"github.com/gin-gonic/gin"
+)
+*/
+
 
 func handleFatalError(err error) {
 	if err != nil {
@@ -221,6 +225,7 @@ type solveRequest struct {
 func main() {
 	handleSignals()
 
+	/*
 	router := gin.Default()
 	router.GET("/", func(c *gin.Context) {
 		c.IndentedJSON(http.StatusOK, gin.H{"msg": "Hello world"})
@@ -236,5 +241,7 @@ func main() {
 	})
 
 	router.Run("localhost:8080")
-	fmt.Println(solve(false, "3 1 2 3 4 5 6 8 7 0"))
+	*/
+	//fmt.Println(solve(false, "3 1 2 3 4 5 6 8 7 0"))
+	fmt.Println(solve(true, ""))
 }
