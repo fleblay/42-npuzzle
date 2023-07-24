@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-func initData2(param algoParameters) (data idaData) {
+func initDataIDA(param algoParameters) (data idaData) {
 	data.maxScore = param.eval.fx(param.board, param.board, goal(len(param.board)), []byte{}) + 1
 	data.states = append(data.states, Deep2DSliceCopy(param.board))
 	hash, _, _ := matrixToStringSelector(param.board, 1, 1)
@@ -15,10 +15,10 @@ func initData2(param algoParameters) (data idaData) {
 	return
 }
 
-func iterateAlgo2(data *idaData) {
+func iterateIDA(data *idaData) {
 	for data.maxScore < 1<<30 {
 		fmt.Fprintln(os.Stderr, "true IDA* cut off is now :", data.maxScore)
-		newMaxScore, found := algo2(data)
+		newMaxScore, found := IDA(data)
 		if found {
 			fmt.Fprintln(os.Stderr, "Solution !")
 			return
@@ -29,7 +29,7 @@ func iterateAlgo2(data *idaData) {
 	data.path = nil
 }
 
-func algo2(data *idaData) (newMaxScore int, found bool) {
+func IDA(data *idaData) (newMaxScore int, found bool) {
 	currentState := data.states[len(data.states)-1]
 	score := data.fx(currentState, data.states[0], data.goal, data.path)
 	data.tries++
@@ -56,7 +56,7 @@ func algo2(data *idaData) (newMaxScore int, found bool) {
 		data.states = append(data.states, nextPos)
 		data.hashes = append(data.hashes, nextHash)
 
-		newMaxScore, found := algo2(data)
+		newMaxScore, found := IDA(data)
 		if found {
 			return newMaxScore, true
 		}

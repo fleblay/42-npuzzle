@@ -90,6 +90,7 @@ func setParam(opt *option, param *algoParameters) (err error) {
 		fmt.Fprintln(os.Stderr, "Board is not solvable")
 		param.unsolvable = true
 	}
+	// A changer
 	if !opt.noIterativeDepth {
 		fmt.Fprintln(os.Stderr, "Search Method : IDA*")
 		param.maxScore = param.eval.fx(param.board, param.board, goal(len(param.board)), []byte{}) + 1
@@ -97,6 +98,7 @@ func setParam(opt *option, param *algoParameters) (err error) {
 		fmt.Fprintln(os.Stderr, "Search Method : A*")
 		param.maxScore |= (1<<31 - 1)
 	}
+	// A changer
 	return nil
 }
 
@@ -130,7 +132,7 @@ func parseFlags(opt *option) {
 	flagSet.IntVar(&opt.workers, "w", 1, "usage : -w [workers] between 1 and 16")
 	flagSet.IntVar(&opt.seenNodesSplit, "split", 1, "usage : -split [setNodesSplit] between 1 and 256")
 	flagSet.IntVar(&opt.speedDisplay, "speed", 100, "usage : -speed [speedDisplay] between 1 and 2048")
-	flagSet.BoolVar(&opt.noIterativeDepth, "no-i", false, "usage : -no-i. Use A* instead of Iterative Depth A* (aka IDA*). Faster but increase memory consumption")
+	flagSet.BoolVar(&opt.noIterativeDepth, "no-i", false, "usage : -no-i. Use A* instead of Iterative Depth A* (aka IDA*). WAY faster but increase A LOT memory consumption")
 	flagSet.BoolVar(&opt.debug, "d", false, "usage : -d. Activate debug info")
 	flagSet.BoolVar(&opt.disableUI, "no-ui", false, "usage : -no-ui. Disable pretty display of solution")
 
@@ -166,10 +168,12 @@ func solve(cli bool, stringInput string) (result []string) {
 	}
 	fmt.Fprintf(os.Stderr, "Board is : %v\nNow starting with : %v\n", param.board, param.eval.name)
 	start := time.Now()
-	//data := initData(param)
-	//iterateAlgo(param, &data)
-	data := initData2(param)
-	iterateAlgo2(&data)
+	/*
+	data := initData(param)
+	iterateAlgo(param, &data)
+	*/
+	data := initDataIDA(param)
+	iterateIDA(&data)
 	end := time.Now()
 	elapsed := end.Sub(start)
 	if data.path != nil {

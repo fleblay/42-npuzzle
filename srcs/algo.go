@@ -35,34 +35,23 @@ func initData(param algoParameters) (data safeData) {
 
 func iterateAlgo(param algoParameters, data *safeData) {
 	var wg sync.WaitGroup
-Iteration:
-	for param.maxScore < 1<<31 {
-		if param.maxScore != 1<<31-1 {
-			fmt.Fprintln(os.Stderr, "cut off is now :", param.maxScore)
-		}
-		for i := 0; i < param.workers; i++ {
-			wg.Add(1)
-			go func(param algoParameters, data *safeData, i int) {
+	for i := 0; i < param.workers; i++ {
+		wg.Add(1)
+		go func(param algoParameters, data *safeData, i int) {
 
-				algo(param, data, i)
-				wg.Done()
-			}(param, data, i)
+			algo(param, data, i)
+			wg.Done()
+		}(param, data, i)
+	}
+	wg.Wait()
+	switch {
+	case data.win == true:
+		fmt.Fprintln(os.Stderr, "Found a solution")
+		for _, value := range data.seenNodes {
+			data.closedSetComplexity += len(value)
 		}
-		wg.Wait()
-		switch {
-		case data.win == true:
-			fmt.Fprintln(os.Stderr, "Found a solution")
-			for _, value := range data.seenNodes {
-				data.closedSetComplexity += len(value)
-			}
-			break Iteration
-		case data.ramFailure == true:
-			fmt.Fprintln(os.Stderr, "RAM Failure")
-			break Iteration
-		default:
-			*data = initData(param)
-			param.maxScore += 2
-		}
+	case data.ramFailure == true:
+		fmt.Fprintln(os.Stderr, "RAM Failure")
 	}
 }
 
