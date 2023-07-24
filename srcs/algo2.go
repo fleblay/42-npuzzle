@@ -6,7 +6,7 @@ import (
 )
 
 func initDataIDA(param algoParameters) (data idaData) {
-	data.maxScore = param.eval.fx(param.board, param.board, goal(len(param.board)), []byte{}) + 1
+	data.maxScore = param.eval.fx(param.board, param.board, goal(len(param.board)), []byte{})
 	data.states = append(data.states, Deep2DSliceCopy(param.board))
 	hash, _, _ := matrixToStringSelector(param.board, 1, 1)
 	data.hashes = append(data.hashes, hash)
@@ -15,18 +15,18 @@ func initDataIDA(param algoParameters) (data idaData) {
 	return
 }
 
-func iterateIDA(data *idaData) {
+func iterateIDA(data *idaData) (result Result) {
+	fmt.Fprintln(os.Stderr, "Selected ALGO : IDA*")
 	for data.maxScore < 1<<30 {
-		fmt.Fprintln(os.Stderr, "IDA* cut off is now :", data.maxScore)
+		fmt.Fprintln(os.Stderr, "Cut off is now :", data.maxScore)
 		newMaxScore, found := IDA(data)
 		if found {
-			fmt.Fprintln(os.Stderr, "Solution !")
-			return
+			return Result{data.path, data.closedSetComplexity, data.tries, data.ramFailure}
 		}
 		data.maxScore = newMaxScore
 	}
-	fmt.Fprintln(os.Stderr, "No solution")
 	data.path = nil
+	return
 }
 
 func IDA(data *idaData) (newMaxScore int, found bool) {

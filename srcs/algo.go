@@ -33,7 +33,8 @@ func initData(param algoParameters) (data safeData) {
 	return
 }
 
-func iterateAlgo(param algoParameters, data *safeData) {
+func iterateAlgo(param algoParameters, data *safeData) (result Result) {
+	fmt.Fprintln(os.Stderr, "Selected ALGO : A*")
 	var wg sync.WaitGroup
 	for i := 0; i < param.workers; i++ {
 		wg.Add(1)
@@ -53,6 +54,7 @@ func iterateAlgo(param algoParameters, data *safeData) {
 	case data.ramFailure == true:
 		fmt.Fprintln(os.Stderr, "RAM Failure")
 	}
+	return Result{data.path, data.closedSetComplexity, data.tries, data.ramFailure}
 }
 
 func checkOptimalSolution(currentNode *Item, data *safeData) bool {
@@ -123,11 +125,12 @@ func algo(param algoParameters, data *safeData, workerIndex int) {
 		}
 		if foundSol != nil && currentNode.node.score > foundSol.node.score {
 			data.mu.Lock()
+			fmt.Fprintf(os.Stderr, "\x1b[32m[%2d] - Found an OPTIMAL solution\n\x1b[0m", workerIndex)
 			terminateSearch(data, foundSol.node.path, foundSol.node.score)
 			data.mu.Unlock()
 			return
 		}
-		printInfo(workerIndex, tries, currentNode, startAlgo, lenqueue, param.maxScore)
+		printInfo(workerIndex, tries, currentNode, startAlgo, lenqueue)
 		if isEqual(goalPos, currentNode.node.world) {
 			data.mu.Lock()
 			if checkOptimalSolution(currentNode, data) {
@@ -136,12 +139,12 @@ func algo(param algoParameters, data *safeData, workerIndex int) {
 				data.mu.Unlock()
 				return
 			} else {
-				fmt.Fprintf(os.Stderr, "\x1b[33m[%2d] - Found a NON optimal solution\n\x1b[0m", workerIndex)
+				fmt.Fprintf(os.Stderr, "\x1b[33m[%2d] - Found a solution : Caching result\n\x1b[0m", workerIndex)
 				foundSol = currentNode
 				data.mu.Unlock()
 			}
 		}
-		getNextMoves(startPos, goalPos, param.eval.fx, currentNode.node.path, currentNode, data, workerIndex, param.workers, param.seenNodesSplit, param.maxScore)
+		getNextMoves(startPos, goalPos, param.eval.fx, currentNode.node.path, currentNode, data, workerIndex, param.workers, param.seenNodesSplit)
 	}
 }
 
@@ -152,7 +155,7 @@ func terminateSearch(data *safeData, solutionPath []byte, score int) {
 	data.winScore = score
 }
 
-func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, currentNode *Item, data *safeData, index int, workers int, seenNodesSplit int, maxScore int) {
+func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, currentNode *Item, data *safeData, index int, workers int, seenNodesSplit int) {
 	if data.tries%1000 == 0 {
 		availableRAM, err := getAvailableRAM()
 		if availableRAM>>20 < minRAMAvailableMB || err != nil {
@@ -178,11 +181,9 @@ func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, curren
 		if !alreadyExplored ||
 			score < seenNodesScore {
 			item := &Item{node: nextNode}
-			if score < maxScore {
-				data.muQueue[queueIndex].Lock()
-				heap.Push(data.posQueue[queueIndex], item)
-				data.muQueue[queueIndex].Unlock()
-			}
+			data.muQueue[queueIndex].Lock()
+			heap.Push(data.posQueue[queueIndex], item)
+			data.muQueue[queueIndex].Unlock()
 			data.muSeen[seenNodeIndex].Lock()
 			data.seenNodes[seenNodeIndex][keyNode] = score
 			data.muSeen[seenNodeIndex].Unlock()
@@ -206,9 +207,9 @@ func refreshData(data *safeData, workerIndex int) (over bool, tries, lenqueue in
 	return
 }
 
-func printInfo(workerIndex int, tries int, currentNode *Item, startAlgo time.Time, lenqueue, maxScore int) {
+func printInfo(workerIndex int, tries int, currentNode *Item, startAlgo time.Time, lenqueue int) {
 	if tries > 0 && tries%100000 == 0 {
-		fmt.Fprintf(os.Stderr, "[%2d] Time so far : %s | %d * 100k tries. Len of try : %d. Score : %d Len of Queue : %d, maxscore : %d\n", workerIndex, time.Since(startAlgo), tries/100000, len(currentNode.node.path), currentNode.node.score, lenqueue, maxScore)
+		fmt.Fprintf(os.Stderr, "[%2d] Time so far : %s | %d * 100k tries. Len of try : %d. Score : %d Len of Queue : %d\n", workerIndex, time.Since(startAlgo), tries/100000, len(currentNode.node.path), currentNode.node.score, lenqueue)
 	}
 }
 

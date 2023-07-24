@@ -1,5 +1,3 @@
-// os.exit a remove
-// generator avec une map size a remove
 package main
 
 import (
@@ -7,14 +5,16 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/shirou/gopsutil/v3/mem"
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/shirou/gopsutil/v3/mem"
 )
 
 func handleFatalError(err error) {
@@ -31,7 +31,7 @@ func areFlagsOk(opt *option) (err error) {
 	if opt.seenNodesSplit < 1 || opt.seenNodesSplit > 256 {
 		return errors.New("Invalid number of splits")
 	}
-	if opt.filename == "" && opt.stringInput == "" && (opt.mapSize < 3 || opt.mapSize > 10) {
+	if opt.filename == "" && opt.stringInput == "" && (opt.mapSize < 3) {
 		return errors.New("Invalid map size")
 	}
 	for _, current := range evals {
@@ -85,15 +85,6 @@ func setParam(opt *option, param *algoParameters) (err error) {
 		fmt.Fprintln(os.Stderr, "Board is not solvable")
 		param.unsolvable = true
 	}
-	// A changer
-	if !opt.noIterativeDepth {
-		fmt.Fprintln(os.Stderr, "Search Method : IDA*")
-		param.maxScore = param.eval.fx(param.board, param.board, goal(len(param.board)), []byte{}) + 1
-	} else {
-		fmt.Fprintln(os.Stderr, "Search Method : A*")
-		param.maxScore |= (1<<31 - 1)
-	}
-	// A changer
 	return nil
 }
 
@@ -140,20 +131,21 @@ func initOptionForApiUse(opt *option) {
 	opt.noIterativeDepth = true
 	opt.workers = 4
 	opt.seenNodesSplit = 16
+	// to remove
+	opt.debug = true
 }
 
-func solve(cli bool, stringInput *string) (result []string) {
+func displayResult(algoResult Result, opt option, param algoParameters, elapsed time.Duration) {
+	fmt.Fprintln(os.Stderr, "Succes with :", param.eval.name, "in ", elapsed.String(), "!")
+	fmt.Fprintf(os.Stderr, "len of solution : %v, time complexity / tries : %d, space complexity : %d\n", len(algoResult.path), algoResult.tries, algoResult.closedSetComplexity)
+	if !opt.disableUI {
+		displayBoard(param.board, algoResult.path, param.eval.name, elapsed.String(), algoResult.tries, algoResult.closedSetComplexity, param.workers, param.seenNodesSplit, opt.speedDisplay)
+	}
+}
+
+func solve(opt *option) (result []string) {
 	param := algoParameters{}
-	opt := &option{}
-	var data interface{
-		path []byte,
-	}
-	if cli {
-		parseFlags(opt)
-	} else {
-		initOptionForApiUse(opt)
-		opt.stringInput = *stringInput
-	}
+	algoResult := Result{}
 	if err := areFlagsOk(opt); err != nil {
 		return []string{"FLAGS", err.Error()}
 	}
@@ -168,21 +160,16 @@ func solve(cli bool, stringInput *string) (result []string) {
 	start := time.Now()
 	if opt.noIterativeDepth {
 		data := initData(param)
-		iterateAlgo(param, &data)
+		algoResult = iterateAlgo(param, &data)
 	} else {
 		data := initDataIDA(param)
-		iterateIDA(&data)
+		algoResult = iterateIDA(&data)
 	}
-	end := time.Now()
-	elapsed := end.Sub(start)
-	if data.path != nil {
-		fmt.Fprintln(os.Stderr, "Succes with :", param.eval.name, "in ", elapsed.String(), "!")
-		fmt.Fprintf(os.Stderr, "len of solution : %v, time complexity / tries : %d, space complexity : %d\n", len(data.path), data.tries, data.closedSetComplexity)
-		if !opt.disableUI {
-			displayBoard(param.board, data.path, param.eval.name, elapsed.String(), data.tries, data.closedSetComplexity, param.workers, param.seenNodesSplit, opt.speedDisplay)
-		}
-		return []string{"OK", string(data.path)}
-	} else if data.ramFailure {
+	elapsed := time.Now().Sub(start)
+	if algoResult.path != nil {
+		displayResult(algoResult, *opt, param, elapsed)
+		return []string{"OK", string(algoResult.path)}
+	} else if algoResult.ramFailure {
 		return []string{"RAM"}
 	}
 	return []string{"END"}
@@ -195,9 +182,13 @@ type solveRequest struct {
 
 func main() {
 	handleSignals()
+	opt := &option{}
 
 	if os.Getenv("API") != "" {
+		initOptionForApiUse(opt)
+		gin.SetMode(gin.ReleaseMode)
 		router := gin.Default()
+
 		router.GET("/", func(c *gin.Context) {
 			c.IndentedJSON(http.StatusOK, gin.H{"msg": "Hello world"})
 		})
@@ -209,11 +200,19 @@ func main() {
 				c.IndentedJSON(http.StatusBadRequest, gin.H{"msg": "Wrong Format : " + err.Error()})
 			}
 			fmt.Println(newRequest)
+			opt.stringInput = strconv.Itoa(newRequest.Size) + " " + newRequest.Board
+			result := solve(opt)
+			if len(result) > 1 {
+				c.IndentedJSON(http.StatusOK, gin.H{"status": result[0], "solution": result[1]})
+			} else {
+				c.IndentedJSON(http.StatusOK, gin.H{"status": result[0]})
+			}
 		})
 
+		fmt.Println("Now reading request on localhost:8080")
 		router.Run("localhost:8080")
 	} else {
-		fmt.Println(solve(true, nil))
-		//fmt.Println(solve(false, "3 1 2 3 4 5 6 7 8 0"))
+		parseFlags(opt)
+		fmt.Println(solve(opt))
 	}
 }

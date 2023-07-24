@@ -84,11 +84,14 @@ func extractSize(inputArray []int) (size int, err error) {
 		return -1, errors.New("Error parsing input : wrong grid size")
 	}
 	size = inputArray[0]
-	if size*size < len(inputArray)-1 {
-		return -1, errors.New("Error parsing input : missing numbers or size in grid")
+	if size < 3 {
+		return -1, errors.New("Error parsing input : grid size is below 3")
 	}
 	if size*size > len(inputArray)-1 {
-		return -1, errors.New("Error parsing input : extrat numbers or size in grid")
+		return -1, errors.New("Error parsing input : missing numbers in grid")
+	}
+	if size*size < len(inputArray)-1 {
+		return -1, errors.New("Error parsing input : extra numbers in grid")
 	}
 	return size, nil
 }
@@ -99,7 +102,7 @@ func createBoard(size int, inputArray []int) (board [][]int, err error) {
 		board[i] = make([]int, size)
 		for j := 0; j < size; j++ {
 			if inputArray[i*size+j+1] < 0 || inputArray[i*size+j+1] > size*size-1 {
-				return nil, errors.New(fmt.Sprintln("Error parsing input. Size :", size, "number causing error :", inputArray[i*size+j+1], "at row :", i, "and column :", j))
+				return nil, errors.New(fmt.Sprintln("Error parsing input. Size :", size, "number causing error : [", strconv.Itoa(inputArray[i*size+j+1]), "] at row :", i, "and column :", j))
 			}
 			board[i][j] = inputArray[i*size+j+1]
 		}

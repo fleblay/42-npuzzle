@@ -30,6 +30,7 @@ type eval struct {
 	name string
 	fx   evalFx
 }
+
 type option struct {
 	filename         string
 	fd               *os.File
@@ -42,6 +43,13 @@ type option struct {
 	debug            bool
 	disableUI        bool
 	stringInput      string
+}
+
+type Result struct {
+	path                []byte
+	closedSetComplexity int
+	tries               int
+	ramFailure          bool
 }
 
 type idaData struct {
@@ -59,7 +67,6 @@ type idaData struct {
 type algoParameters struct {
 	workers        int
 	seenNodesSplit int
-	maxScore       int
 	eval           eval
 	board          [][]int
 	unsolvable     bool
