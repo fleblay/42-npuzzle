@@ -159,7 +159,7 @@ func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, curren
 	if data.tries%1000 == 0 {
 		availableRAM, err := getAvailableRAM()
 		if availableRAM>>20 < minRAMAvailableMB || err != nil {
-			fmt.Fprintf(os.Stderr, "[%d] - Not enough RAM[%v MB] to continue or Fatal (error reading RAM status)", index, availableRAM>>20)
+			fmt.Fprintf(os.Stderr, "[%d] - Not enough RAM[%v MB] to continue or Fatal (error reading RAM status)\n", index, availableRAM>>20)
 			data.mu.Lock()
 			data.ramFailure = true
 			data.mu.Unlock()

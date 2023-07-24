@@ -214,8 +214,8 @@ func main() {
 			}
 		})
 
-		fmt.Println("Now reading request on localhost:8080")
-		router.Run("localhost:8080")
+		fmt.Println("Now reading request on localhost:8081")
+		router.Run("localhost:8081")
 	} else {
 		parseFlags(opt)
 		fmt.Println(solve(opt))
