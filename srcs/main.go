@@ -202,6 +202,11 @@ func main() {
 			fmt.Println(newRequest)
 			opt.stringInput = strconv.Itoa(newRequest.Size) + " " + newRequest.Board
 			result := solve(opt)
+			if result[0] == "RAM" && opt.noIterativeDepth == true {
+				fmt.Fprintln(os.Stderr, "Killed because of RAM, trying again with IDA*")
+				opt.noIterativeDepth = false
+				result = solve(opt)
+			}
 			if len(result) > 1 {
 				c.IndentedJSON(http.StatusOK, gin.H{"status": result[0], "solution": result[1]})
 			} else {
