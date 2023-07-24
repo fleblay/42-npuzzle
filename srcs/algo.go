@@ -52,6 +52,9 @@ Iteration:
 		switch {
 		case data.win == true:
 			fmt.Fprintln(os.Stderr, "Found a solution")
+			for _, value := range data.seenNodes {
+				data.closedSetComplexity += len(value)
+			}
 			break Iteration
 		case data.ramFailure == true:
 			fmt.Fprintln(os.Stderr, "RAM Failure")

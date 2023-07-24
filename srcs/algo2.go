@@ -30,27 +30,26 @@ func iterateAlgo2(data *idaData) {
 }
 
 func algo2(data *idaData) (newMaxScore int, found bool) {
-	//fmt.Fprintln(os.Stderr, "Deeper")
 	currentState := data.states[len(data.states)-1]
 	score := data.fx(currentState, data.states[0], data.goal, data.path)
+	data.tries++
+	if currentComplexity := len(data.states); currentComplexity > data.closedSetComplexity {
+		data.closedSetComplexity = currentComplexity
+	}
 	if score > data.maxScore {
-		//fmt.Fprintln(os.Stderr, "Score")
 		return score, false
 	}
 	if isEqual(currentState, data.goal) {
-		//fmt.Fprintln(os.Stderr, "Solution !!!")
 		return -1, true
 	}
-	minScoreAboveCutOff := 1 << 30 
+	minScoreAboveCutOff := 1 << 30
 	for _, dir := range directions {
 		ok, nextPos := dir.fx(currentState)
 		if !ok {
-			//fmt.Fprintln(os.Stderr, string(dir.name), "is not ok")
 			continue
 		}
 		nextHash, _, _ := matrixToStringSelector(nextPos, 1, 1)
 		if index := Index(data.hashes, nextHash); index != -1 {
-			//fmt.Fprintln(os.Stderr, "hash already seen")
 			continue
 		}
 		data.path = append(data.path, dir.name)
@@ -58,18 +57,15 @@ func algo2(data *idaData) (newMaxScore int, found bool) {
 		data.hashes = append(data.hashes, nextHash)
 
 		newMaxScore, found := algo2(data)
-		//fmt.Fprintln(os.Stderr, "after return of algo", newMaxScore, found)
 		if found {
 			return newMaxScore, true
 		}
 		if newMaxScore < minScoreAboveCutOff {
-			//fmt.Fprintln(os.Stderr, "min is now", minScoreAboveCutOff)
 			minScoreAboveCutOff = newMaxScore
 		}
 		data.path = data.path[:len(data.path)-1]
 		data.states = data.states[:len(data.states)-1]
 		data.hashes = data.hashes[:len(data.hashes)-1]
 	}
-	//fmt.Fprintln(os.Stderr, "About to return with score ", minScoreAboveCutOff)
 	return minScoreAboveCutOff, false
 }

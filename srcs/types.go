@@ -45,12 +45,15 @@ type option struct {
 }
 
 type idaData struct {
-	fx       evalFx
-	maxScore int
-	path     []byte
-	states   [][][]int
-	hashes     []string
-	goal     [][]int
+	fx                  evalFx
+	maxScore            int
+	path                []byte
+	states              [][][]int
+	hashes              []string
+	goal                [][]int
+	closedSetComplexity int
+	tries               int
+	ramFailure          bool
 }
 
 type algoParameters struct {

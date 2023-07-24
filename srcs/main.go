@@ -165,26 +165,16 @@ func solve(cli bool, stringInput string) (result []string) {
 		return []string{"UNSOLVABLE"}
 	}
 	fmt.Fprintf(os.Stderr, "Board is : %v\nNow starting with : %v\n", param.board, param.eval.name)
-	//data := initData(param)
-	data := initData2(param)
 	start := time.Now()
+	//data := initData(param)
 	//iterateAlgo(param, &data)
+	data := initData2(param)
 	iterateAlgo2(&data)
 	end := time.Now()
 	elapsed := end.Sub(start)
 	if data.path != nil {
 		fmt.Fprintln(os.Stderr, "Succes with :", param.eval.name, "in ", elapsed.String(), "!")
-		return []string{"OK", string(data.path)}
-	}
-	return []string{"END"}
-
-	/*
-	if data.path != nil {
-		for _, value := range data.seenNodes {
-			data.closedSetComplexity += len(value)
-		}
-		fmt.Fprintln(os.Stderr, "Succes with :", param.eval.name, "in ", elapsed.String(), "!")
-		fmt.Fprintf(os.Stderr, "len of solution : %v, time complexity / tries : %d, space complexity : %d, score : %d\n", len(data.path), data.tries, data.closedSetComplexity, data.winScore)
+		fmt.Fprintf(os.Stderr, "len of solution : %v, time complexity / tries : %d, space complexity : %d\n", len(data.path), data.tries, data.closedSetComplexity)
 		if !opt.disableUI {
 			displayBoard(param.board, data.path, param.eval.name, elapsed.String(), data.tries, data.closedSetComplexity, param.workers, param.seenNodesSplit, opt.speedDisplay)
 		}
@@ -193,7 +183,6 @@ func solve(cli bool, stringInput string) (result []string) {
 		return []string{"RAM"}
 	}
 	return []string{"END"}
-	*/
 }
 
 type solveRequest struct {
