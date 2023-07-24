@@ -7,20 +7,15 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/gin-gonic/gin"
+	"github.com/shirou/gopsutil/v3/mem"
+	"net/http"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 	"time"
-	"github.com/shirou/gopsutil/v3/mem"
 )
-/*
-import (
-	"net/http"
-	"github.com/gin-gonic/gin"
-)
-*/
-
 
 func handleFatalError(err error) {
 	if err != nil {
@@ -147,14 +142,17 @@ func initOptionForApiUse(opt *option) {
 	opt.seenNodesSplit = 16
 }
 
-func solve(cli bool, stringInput string) (result []string) {
+func solve(cli bool, stringInput *string) (result []string) {
 	param := algoParameters{}
 	opt := &option{}
+	var data interface{
+		path []byte,
+	}
 	if cli {
 		parseFlags(opt)
 	} else {
 		initOptionForApiUse(opt)
-		opt.stringInput = stringInput
+		opt.stringInput = *stringInput
 	}
 	if err := areFlagsOk(opt); err != nil {
 		return []string{"FLAGS", err.Error()}
@@ -168,12 +166,13 @@ func solve(cli bool, stringInput string) (result []string) {
 	}
 	fmt.Fprintf(os.Stderr, "Board is : %v\nNow starting with : %v\n", param.board, param.eval.name)
 	start := time.Now()
-	/*
-	data := initData(param)
-	iterateAlgo(param, &data)
-	*/
-	data := initDataIDA(param)
-	iterateIDA(&data)
+	if opt.noIterativeDepth {
+		data := initData(param)
+		iterateAlgo(param, &data)
+	} else {
+		data := initDataIDA(param)
+		iterateIDA(&data)
+	}
 	end := time.Now()
 	elapsed := end.Sub(start)
 	if data.path != nil {
@@ -190,30 +189,31 @@ func solve(cli bool, stringInput string) (result []string) {
 }
 
 type solveRequest struct {
-	Size  int `json:"size"`
+	Size  int    `json:"size"`
 	Board string `json:"board"`
 }
 
 func main() {
 	handleSignals()
 
-	/*
-	router := gin.Default()
-	router.GET("/", func(c *gin.Context) {
-		c.IndentedJSON(http.StatusOK, gin.H{"msg": "Hello world"})
-	})
+	if os.Getenv("API") != "" {
+		router := gin.Default()
+		router.GET("/", func(c *gin.Context) {
+			c.IndentedJSON(http.StatusOK, gin.H{"msg": "Hello world"})
+		})
 
-	//curl -X POST --data '{"size":3,"board":"1 2 3 4 5 6 7 8 0"}' localhost:8080
-	router.POST("/", func(c *gin.Context) {
-		var newRequest solveRequest
-		if err := c.BindJSON(&newRequest); err != nil {
-			c.IndentedJSON(http.StatusBadRequest, gin.H{"msg": "Wrong Format : " + err.Error()})
-		}
-		fmt.Println(newRequest)
-	})
+		//curl -X POST --data '{"size":3,"board":"1 2 3 4 5 6 7 8 0"}' localhost:8080
+		router.POST("/", func(c *gin.Context) {
+			var newRequest solveRequest
+			if err := c.BindJSON(&newRequest); err != nil {
+				c.IndentedJSON(http.StatusBadRequest, gin.H{"msg": "Wrong Format : " + err.Error()})
+			}
+			fmt.Println(newRequest)
+		})
 
-	router.Run("localhost:8080")
-	*/
-	//fmt.Println(solve(false, "3 1 2 3 4 5 6 8 7 0"))
-	fmt.Println(solve(true, ""))
+		router.Run("localhost:8080")
+	} else {
+		fmt.Println(solve(true, nil))
+		//fmt.Println(solve(false, "3 1 2 3 4 5 6 7 8 0"))
+	}
 }

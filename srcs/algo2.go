@@ -17,7 +17,7 @@ func initDataIDA(param algoParameters) (data idaData) {
 
 func iterateIDA(data *idaData) {
 	for data.maxScore < 1<<30 {
-		fmt.Fprintln(os.Stderr, "true IDA* cut off is now :", data.maxScore)
+		fmt.Fprintln(os.Stderr, "IDA* cut off is now :", data.maxScore)
 		newMaxScore, found := IDA(data)
 		if found {
 			fmt.Fprintln(os.Stderr, "Solution !")
