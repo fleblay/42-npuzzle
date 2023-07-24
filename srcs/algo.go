@@ -33,6 +33,63 @@ func initData(param algoParameters) (data safeData) {
 	return
 }
 
+func iterateAlgo(param algoParameters, data *safeData) {
+	var wg sync.WaitGroup
+Iteration:
+	for param.maxScore < 1<<31 {
+		if param.maxScore != 1<<31-1 {
+			fmt.Fprintln(os.Stderr, "cut off is now :", param.maxScore)
+		}
+		for i := 0; i < param.workers; i++ {
+			wg.Add(1)
+			go func(param algoParameters, data *safeData, i int) {
+
+				algo(param, data, i)
+				wg.Done()
+			}(param, data, i)
+		}
+		wg.Wait()
+		switch {
+		case data.win == true:
+			fmt.Fprintln(os.Stderr, "Found a solution")
+			break Iteration
+		case data.ramFailure == true:
+			fmt.Fprintln(os.Stderr, "RAM Failure")
+			break Iteration
+		default:
+			*data = initData(param)
+			param.maxScore += 2
+		}
+	}
+}
+
+func checkOptimalSolution(currentNode *Item, data *safeData) bool {
+	bestNodes := make([]*Item, len(data.posQueue))
+	for i := range data.posQueue {
+		data.muQueue[i].Lock()
+		if data.posQueue[i].Len() > 0 {
+			bestNodes[i] = heap.Pop(data.posQueue[i]).(*Item)
+		} else {
+			bestNodes[i] = nil
+		}
+		data.muQueue[i].Unlock()
+	}
+	for i := range bestNodes {
+		if bestNodes[i] != nil && bestNodes[i].node.score <= currentNode.node.score {
+			for j := range bestNodes {
+				data.muQueue[j].Lock()
+				if bestNodes[j] != nil {
+					heap.Push(data.posQueue[j], bestNodes[j])
+				}
+				data.muQueue[j].Unlock()
+			}
+			return false
+		}
+	}
+
+	return true
+}
+
 func algo(param algoParameters, data *safeData, workerIndex int) {
 	goalPos := goal(len(param.board))
 	startPos := param.board
@@ -96,33 +153,6 @@ func algo(param algoParameters, data *safeData, workerIndex int) {
 	}
 }
 
-func checkOptimalSolution(currentNode *Item, data *safeData) bool {
-	bestNodes := make([]*Item, len(data.posQueue))
-	for i := range data.posQueue {
-		data.muQueue[i].Lock()
-		if data.posQueue[i].Len() > 0 {
-			bestNodes[i] = heap.Pop(data.posQueue[i]).(*Item)
-		} else {
-			bestNodes[i] = nil
-		}
-		data.muQueue[i].Unlock()
-	}
-	for i := range bestNodes {
-		if bestNodes[i] != nil && bestNodes[i].node.score <= currentNode.node.score {
-			for j := range bestNodes {
-				data.muQueue[j].Lock()
-				if bestNodes[j] != nil {
-					heap.Push(data.posQueue[j], bestNodes[j])
-				}
-				data.muQueue[j].Unlock()
-			}
-			return false
-		}
-	}
-
-	return true
-}
-
 func terminateSearch(data *safeData, solutionPath []byte, score int) {
 	data.path = solutionPath
 	data.over = true
@@ -133,8 +163,8 @@ func terminateSearch(data *safeData, solutionPath []byte, score int) {
 func getNextMoves(startPos, goalPos [][]int, scoreFx evalFx, path []byte, currentNode *Item, data *safeData, index int, workers int, seenNodesSplit int, maxScore int) {
 	if data.tries%1000 == 0 {
 		availableRAM, err := getAvailableRAM()
-		if availableRAM>>20 < minRAMAvailableMB || err != nil{
-			fmt.Fprintf(os.Stderr, "[%d] - Not enough RAM to continue or Fatal (error reading RAM status)", index)
+		if availableRAM>>20 < minRAMAvailableMB || err != nil {
+			fmt.Fprintf(os.Stderr, "[%d] - Not enough RAM[%v MB] to continue or Fatal (error reading RAM status)", index, availableRAM>>20)
 			data.mu.Lock()
 			data.ramFailure = true
 			data.mu.Unlock()

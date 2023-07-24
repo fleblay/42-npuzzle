@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/signal"
 	"strings"
-	"sync"
 	"syscall"
 	"time"
 	"github.com/shirou/gopsutil/v3/mem"
@@ -116,38 +115,8 @@ func getAvailableRAM() (uint64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("Error while getting info about memory: %v", err)
 	}
-	availableRAM := v.Free
+	availableRAM := v.Available
 	return availableRAM, nil
-}
-
-func iterateAlgo(param algoParameters, data *safeData) {
-	var wg sync.WaitGroup
-Iteration:
-	for param.maxScore < 1<<31 {
-		if param.maxScore != 1<<31-1 {
-			fmt.Fprintln(os.Stderr, "cut off is now :", param.maxScore)
-		}
-		for i := 0; i < param.workers; i++ {
-			wg.Add(1)
-			go func(param algoParameters, data *safeData, i int) {
-
-				algo(param, data, i)
-				wg.Done()
-			}(param, data, i)
-		}
-		wg.Wait()
-		switch {
-		case data.win == true:
-			fmt.Fprintln(os.Stderr, "Found a solution")
-			break Iteration
-		case data.ramFailure == true:
-			fmt.Fprintln(os.Stderr, "RAM Failure")
-			break Iteration
-		default:
-			*data = initData(param)
-			param.maxScore += 2
-		}
-	}
 }
 
 func parseFlags(opt *option) {
@@ -196,11 +165,20 @@ func solve(cli bool, stringInput string) (result []string) {
 		return []string{"UNSOLVABLE"}
 	}
 	fmt.Fprintf(os.Stderr, "Board is : %v\nNow starting with : %v\n", param.board, param.eval.name)
-	data := initData(param)
+	//data := initData(param)
+	data := initData2(param)
 	start := time.Now()
-	iterateAlgo(param, &data)
+	//iterateAlgo(param, &data)
+	iterateAlgo2(&data)
 	end := time.Now()
 	elapsed := end.Sub(start)
+	if data.path != nil {
+		fmt.Fprintln(os.Stderr, "Succes with :", param.eval.name, "in ", elapsed.String(), "!")
+		return []string{"OK", string(data.path)}
+	}
+	return []string{"END"}
+
+	/*
 	if data.path != nil {
 		for _, value := range data.seenNodes {
 			data.closedSetComplexity += len(value)
@@ -215,6 +193,7 @@ func solve(cli bool, stringInput string) (result []string) {
 		return []string{"RAM"}
 	}
 	return []string{"END"}
+	*/
 }
 
 type solveRequest struct {

@@ -44,6 +44,15 @@ type option struct {
 	stringInput      string
 }
 
+type idaData struct {
+	fx       evalFx
+	maxScore int
+	path     []byte
+	states   [][][]int
+	hashes     []string
+	goal     [][]int
+}
+
 type algoParameters struct {
 	workers        int
 	seenNodesSplit int
