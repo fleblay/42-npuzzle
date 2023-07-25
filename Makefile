@@ -1,5 +1,5 @@
 all:
-	go build .
+	go build -o npuzzle
 
 clean:
 	rm -f npuzzle
