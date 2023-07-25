@@ -182,6 +182,7 @@ func solve(opt *option, db *gorm.DB) (result []string) {
 			Size:        len(param.board),
 			Hash:        hash,
 			Path:        string(algoResult.path),
+			Length:      len(algoResult.path),
 			Algo:        algo,
 			Solvable:    true,
 			Workers:     opt.workers,

@@ -10,6 +10,7 @@ type Solution struct {
 	Hash string `json:"hash"`
 	Solvable bool `json:"solvable"`
 	Path string `json:"path"`
+	Length int `json:"length"`
 	Algo string `json:"algo"`
 	Workers int `json:"workers"`
 	Split int `json:"split"`
