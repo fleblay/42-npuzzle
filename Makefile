@@ -1,5 +1,5 @@
 all:
-	cd srcs && go build -o ..
+	go build .
 
 clean:
 	rm -f npuzzle

@@ -1,9 +1,10 @@
-package main
+package database
 
 import (
+	"errors"
 	"fmt"
-	"os"
 
+	"github.com/fleblay/42-npuzzle/models"
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
@@ -11,13 +12,12 @@ import (
 func ConnectDB(host string) (*gorm.DB, error) {
 	db, err := gorm.Open(sqlite.Open(host), &gorm.Config{})
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Failed to connect to database with host :", host)
-		return nil, err
+		return nil, errors.New(fmt.Sprintf("Failed to connect to database with host : %s\n", host))
 	}
 	return db, nil
 }
 
 func CreateModel(db *gorm.DB) *gorm.DB {
-	db.AutoMigrate(&Solution{})
+	db.AutoMigrate(&models.Solution{})
 	return db
 }

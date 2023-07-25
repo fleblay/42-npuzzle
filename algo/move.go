@@ -1,4 +1,4 @@
-package main
+package algo
 
 func getValuePostion(board [][]int, toFind int) Pos2D {
 	for i, line := range board {

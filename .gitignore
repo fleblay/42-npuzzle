@@ -1,2 +1,6 @@
 #binary file
+42-npuzzle
 npuzzle
+
+#sqlite3 db files
+*.db

@@ -1,4 +1,4 @@
-package main
+package algo
 
 import (
 	"fmt"
@@ -27,7 +27,7 @@ func convertBoard(board [][]int) [][]string {
 
 }
 
-func displayBoard(board [][]int, path []byte, elvalName string, times string, tries, openSetComplexity, workers, closeSetSplit, speedDisplay int) {
+func DisplayBoard(board [][]int, path []byte, elvalName string, times string, tries, openSetComplexity, workers, closeSetSplit, speedDisplay int) {
 	if err := ui.Init(); err != nil {
 		log.Fatalf("failed to initialize termui: %v", err)
 	}

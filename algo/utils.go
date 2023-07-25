@@ -1,4 +1,4 @@
-package main
+package algo
 
 import (
 	"io/fs"
@@ -101,11 +101,11 @@ func matrixToString2(matrix [][]int) string {
 	return results
 }
 
-func matrixToStringSelector(matrix [][]int, worker int, seenNodeMap int) (key string, queueIndex int, seenNodeIndex int) {
+func MatrixToStringSelector(matrix [][]int, worker int, seenNodeMap int) (key string, queueIndex int, seenNodeIndex int) {
 	if len(matrix) < 10 {
 		return matrixToStringOptimal(matrix, worker, seenNodeMap)
 	} else {
-		return matrixToStringNoOpti(matrix, worker, seenNodeMap)
+		return MatrixToStringNoOpti(matrix, worker, seenNodeMap)
 	}
 }
 
@@ -131,7 +131,7 @@ func matrixToStringOptimal(matrix [][]int, worker int, seenNodeMap int) (key str
 	return string(results), queueIndex, seenNodeIndex
 }
 
-func matrixToStringNoOpti(matrix [][]int, worker int, seenNodeMap int) (key string, queueIndex int, seenNodeIndex int) {
+func MatrixToStringNoOpti(matrix [][]int, worker int, seenNodeMap int) (key string, queueIndex int, seenNodeIndex int) {
 
 	results := ""
 	size := len(matrix)

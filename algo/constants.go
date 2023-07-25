@@ -1,6 +1,6 @@
-package main
+package algo
 
-var evals = []eval{
+var Evals = []Eval{
 	{"dijkstra", dijkstra},
 	{"greedy_hamming", greedy_hamming},
 	{"greedy_inv", greedy_inv},
@@ -11,7 +11,7 @@ var evals = []eval{
 	{"astar_manhattan2", astar_manhattan_generator(2)},
 }
 
-var directions = []struct {
+var Directions = []struct {
 	name byte
 	fx   moveFx
 }{
@@ -21,4 +21,4 @@ var directions = []struct {
 	{'R', moveRight},
 }
 
-var minRAMAvailableMB uint64 = 512
+var MinRAMAvailableMB uint64 = 512

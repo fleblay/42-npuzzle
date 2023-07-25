@@ -1,4 +1,4 @@
-package main
+package algo
 
 func matrixToTableSnail(matrix [][]int) []int {
 	boardSize := len(matrix)
@@ -35,7 +35,7 @@ func matrixToTableSnail(matrix [][]int) []int {
 	return table
 }
 
-func isSolvable(board [][]int) bool {
+func IsSolvable(board [][]int) bool {
 
 	board1d := matrixToTableSnail(board)
 	inversions := 0

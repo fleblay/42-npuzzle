@@ -1,4 +1,4 @@
-package main
+package algo
 
 import (
 	"testing"
@@ -8,7 +8,7 @@ func TestGridGenerator(t *testing.T) {
 	test := []int{3, 4, 5, 6, 7, 8}
 	for _, test := range test {
 		values := map[int]int{}
-		grid := gridGenerator(test)
+		grid := GridGenerator(test)
 		for _, row := range grid {
 			for _, item := range row {
 				if _, ok := values[item]; ok {

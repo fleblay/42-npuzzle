@@ -1,4 +1,4 @@
-module npuzzle
+module github.com/fleblay/42-npuzzle
 
 go 1.18
 

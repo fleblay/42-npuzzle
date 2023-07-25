@@ -1,8 +1,6 @@
-package main
+package algo
 
-import ()
-
-func gridGenerator(mapSize int) (board [][]int) {
+func GridGenerator(mapSize int) (board [][]int) {
 
 	for {
 		randomNumber := make(map[int]int)
@@ -21,7 +19,7 @@ func gridGenerator(mapSize int) (board [][]int) {
 			board[j-1][i%mapSize] = number
 			i++
 		}
-		if isSolvable(board) {
+		if IsSolvable(board) {
 			break
 		}
 	}
