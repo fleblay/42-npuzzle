@@ -3,16 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"net/http"
+	"github.com/fleblay/42-npuzzle/algo"
+	"github.com/fleblay/42-npuzzle/controller"
+	"github.com/fleblay/42-npuzzle/database"
+	"github.com/gin-gonic/gin"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
-
-	"github.com/fleblay/42-npuzzle/algo"
-	"github.com/fleblay/42-npuzzle/database"
-
-	"github.com/gin-gonic/gin"
 )
 
 func handleFatalError(err error) {
@@ -50,63 +47,29 @@ func parseFlags(opt *algo.Option) {
 	flagSet.Parse(os.Args[1:])
 }
 
-func initOptionForApiUse(opt *algo.Option) {
-	opt.DisableUI = true
-	opt.Heuristic = "astar_manhattan"
-	opt.NoIterativeDepth = true
-	opt.Workers = 4
-	opt.SeenNodesSplit = 16
-	// to remove
-	opt.Debug = true
-}
-
-type solveRequest struct {
-	Size  int    `json:"size"`
-	Board string `json:"board"`
-}
-
 func main() {
 	handleSignals()
-	opt := &algo.Option{}
-	db, err := database.ConnectDB("solutions.db")
-	handleFatalError(err)
-	database.CreateModel(db)
 
-	if os.Getenv("API") != "" {
+	if os.Getenv("API") == "true" {
+		db, err := database.ConnectDB("solutions.db")
+		handleFatalError(err)
+		database.CreateModel(db)
 
-		initOptionForApiUse(opt)
+		repo := controller.Repository{
+			DB : db,
+		}
+
 		gin.SetMode(gin.ReleaseMode)
 		router := gin.Default()
 
-		router.GET("/", func(c *gin.Context) {
-			c.IndentedJSON(http.StatusOK, gin.H{"msg": "Hello world"})
-		})
-
-		router.POST("/", func(c *gin.Context) {
-			var newRequest solveRequest
-			if err := c.BindJSON(&newRequest); err != nil {
-				c.IndentedJSON(http.StatusBadRequest, gin.H{"msg": "Wrong Format : " + err.Error()})
-			}
-			fmt.Println(newRequest)
-			opt.StringInput = strconv.Itoa(newRequest.Size) + " " + newRequest.Board
-			result := algo.Solve(opt, db)
-			if result[0] == "RAM" && opt.NoIterativeDepth == true {
-				fmt.Fprintln(os.Stderr, "Killed because of RAM, trying again with IDA*")
-				opt.NoIterativeDepth = false
-				result = algo.Solve(opt, db)
-				opt.NoIterativeDepth = true
-			}
-			if len(result) > 1 {
-				c.IndentedJSON(http.StatusOK, gin.H{"status": result[0], "solution": result[1]})
-			} else {
-				c.IndentedJSON(http.StatusOK, gin.H{"status": result[0]})
-			}
-		})
+		router.POST("/", repo.Solve)
 
 		fmt.Println("Now reading request on localhost:8081")
-		router.Run("localhost:8081")
+		err = router.Run("localhost:8081")
+		handleFatalError(err)
 	} else {
+		opt := &algo.Option{}
 		parseFlags(opt)
-		fmt.Println(algo.Solve(opt, db))
+		fmt.Println(algo.Solve(opt))
 	}
 }

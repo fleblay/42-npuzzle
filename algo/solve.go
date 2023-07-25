@@ -9,8 +9,17 @@ import (
 	"time"
 
 	"github.com/fleblay/42-npuzzle/models"
-	"gorm.io/gorm"
 )
+
+func InitOptionForApiUse(opt *Option) {
+	opt.DisableUI = true
+	opt.Heuristic = "astar_manhattan"
+	opt.NoIterativeDepth = true
+	opt.Workers = 4
+	opt.SeenNodesSplit = 16
+	opt.Debug = true
+}
+
 
 func areFlagsOk(opt *Option) (err error) {
 	if opt.Workers < 1 || opt.Workers > 16 {
@@ -84,7 +93,7 @@ func displayResult(algoResult Result, opt Option, param AlgoParameters, elapsed 
 	}
 }
 
-func saveResultToDb(param AlgoParameters, algoResult Result, db *gorm.DB, ComputeTime int64) {
+func generateSolutionEntity(param AlgoParameters, algoResult Result, elapsed time.Duration) *models.Solution {
 	hash, _, _ := MatrixToStringNoOpti(param.Board, param.Workers, param.SeenNodesSplit)
 	solution := models.Solution{
 		Size:        len(param.Board),
@@ -96,23 +105,23 @@ func saveResultToDb(param AlgoParameters, algoResult Result, db *gorm.DB, Comput
 		Workers:     param.Workers,
 		Split:       param.SeenNodesSplit,
 		Disposition: "snail",
-		ComputeMs:   ComputeTime,
+		ComputeMs:   elapsed.Milliseconds(),
 	}
-	solution.UpdateOrCreateSolution(db)
+	return &solution
 }
 
-func Solve(opt *Option, db *gorm.DB) (result []string) {
+func Solve(opt *Option) (result []string, solution *models.Solution) {
 	param := AlgoParameters{}
 	algoResult := Result{}
 	if err := areFlagsOk(opt); err != nil {
-		return []string{"FLAGS", err.Error()}
+		return []string{"FLAGS", err.Error()}, nil
 	}
 	if err := setParam(opt, &param); err != nil {
-		return []string{"PARAM", err.Error()}
+		return []string{"PARAM", err.Error()}, nil
 	}
 	if param.Unsolvable {
 		fmt.Fprintln(os.Stderr, "Board is unsolvable", param.Board)
-		return []string{"UNSOLVABLE"}
+		return []string{"UNSOLVABLE"}, nil
 	}
 	fmt.Fprintf(os.Stderr, "Board is : %v\nNow starting with : %v\n", param.Board, param.Eval.Name)
 	start := time.Now()
@@ -126,11 +135,10 @@ func Solve(opt *Option, db *gorm.DB) (result []string) {
 	elapsed := time.Now().Sub(start)
 	if algoResult.Path != nil {
 		displayResult(algoResult, *opt, param, elapsed)
-		saveResultToDb(param, algoResult, db, elapsed.Milliseconds())
-		return []string{"OK", string(algoResult.Path)}
+		return []string{"OK", string(algoResult.Path)}, generateSolutionEntity(param, algoResult, elapsed)
 	} else if algoResult.RamFailure {
-		return []string{"RAM"}
+		return []string{"RAM"}, nil
 	}
-	return []string{"END"}
+	return []string{"END"}, nil
 }
 
