@@ -33,8 +33,9 @@ func IDA(data *idaData) (newMaxScore int, found bool) {
 	currentState := data.states[len(data.states)-1]
 	score := data.fx(currentState, data.states[0], data.goal, data.path)
 	data.tries++
-	if tries > 0 && tries%100000 == 0 {
-		fmt.Fprintf(os.Stderr, "%d * 100k tries", tries/100000)
+	if data.tries > 0 && data.tries%100000 == 0 {
+		fmt.Fprintf(os.Stderr, "%d * 100k tries\n", data.tries/100000)
+	}
 	if currentComplexity := len(data.states); currentComplexity > data.closedSetComplexity {
 		data.closedSetComplexity = currentComplexity
 	}
