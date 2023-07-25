@@ -15,6 +15,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/shirou/gopsutil/v3/mem"
+	"gorm.io/gorm"
+	//"github.com/glebarez/sqlite"
+	//"gorm.io/gorm"
 )
 
 func handleFatalError(err error) {
@@ -143,7 +146,7 @@ func displayResult(algoResult Result, opt option, param algoParameters, elapsed 
 	}
 }
 
-func solve(opt *option) (result []string) {
+func solve(opt *option, db *gorm.DB) (result []string) {
 	param := algoParameters{}
 	algoResult := Result{}
 	if err := areFlagsOk(opt); err != nil {
@@ -168,6 +171,25 @@ func solve(opt *option) (result []string) {
 	elapsed := time.Now().Sub(start)
 	if algoResult.path != nil {
 		displayResult(algoResult, *opt, param, elapsed)
+		hash, _, _ := matrixToStringNoOpti(param.board, param.workers, param.seenNodesSplit)
+		var algo string
+		if opt.noIterativeDepth {
+			algo = "A"
+		} else {
+			algo = "IDA"
+		}
+		solution := Solution{
+			Size:        len(param.board),
+			Hash:        hash,
+			Path:        string(algoResult.path),
+			Algo:        algo,
+			Solvable:    true,
+			Workers:     opt.workers,
+			Split:       opt.seenNodesSplit,
+			Disposition: "snail",
+			ComputeMs:   elapsed.Milliseconds(),
+		}
+		solution.UpdateOrCreateSolution(db)
 		return []string{"OK", string(algoResult.path)}
 	} else if algoResult.ramFailure {
 		return []string{"RAM"}
@@ -183,8 +205,14 @@ type solveRequest struct {
 func main() {
 	handleSignals()
 	opt := &option{}
+	db, err := ConnectDB("solutions.db")
+	if err != nil {
+		os.Exit(1)
+	}
+	CreateModel(db)
 
 	if os.Getenv("API") != "" {
+
 		initOptionForApiUse(opt)
 		gin.SetMode(gin.ReleaseMode)
 		router := gin.Default()
@@ -201,11 +229,11 @@ func main() {
 			}
 			fmt.Println(newRequest)
 			opt.stringInput = strconv.Itoa(newRequest.Size) + " " + newRequest.Board
-			result := solve(opt)
+			result := solve(opt, db)
 			if result[0] == "RAM" && opt.noIterativeDepth == true {
 				fmt.Fprintln(os.Stderr, "Killed because of RAM, trying again with IDA*")
 				opt.noIterativeDepth = false
-				result = solve(opt)
+				result = solve(opt, db)
 			}
 			if len(result) > 1 {
 				c.IndentedJSON(http.StatusOK, gin.H{"status": result[0], "solution": result[1]})
@@ -218,6 +246,6 @@ func main() {
 		router.Run("localhost:8081")
 	} else {
 		parseFlags(opt)
-		fmt.Println(solve(opt))
+		fmt.Println(solve(opt, db))
 	}
 }
