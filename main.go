@@ -53,14 +53,16 @@ func main() {
 	if os.Getenv("API") == "true" {
 		db, err := database.ConnectDB("solutions.db")
 		handleFatalError(err)
-		err = database.CreateModel(db)
+		count, err := database.CreateModel(db)
+		fmt.Printf("Successfully connected to DB with %d items\n", count)
 		handleFatalError(err)
 		repo := controller.Repository{DB: db}
 
 		gin.SetMode(gin.ReleaseMode)
 		router := gin.Default()
 
-		router.POST("/", repo.Solve)
+		router.POST("/solve", repo.Solve)
+		router.GET("/generate/:size", repo.Generate)
 
 		listen := os.Getenv("LISTEN")
 		if listen != "" {

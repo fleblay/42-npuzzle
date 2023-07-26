@@ -29,7 +29,7 @@ func GetSolutionByStringInput(solution *models.Solution, db *gorm.DB, stringInpu
 	if err != nil {
 		return err
 	}
-	hash := algo.MatrixToStringHashOnly(board)
+	hash := algo.MatrixToStringHashOnly(board, ".")
 	return solution.GetSolutionByHash(db, hash)
 }
 
@@ -65,4 +65,13 @@ func (repo *Repository) Solve(c *gin.Context) {
 		}
 	}
 	c.IndentedJSON(http.StatusOK, gin.H{"status": result[0], "solution": result[1]})
+}
+
+func (repo *Repository) Generate(c *gin.Context) {
+	size, err := strconv.Atoi(c.Param("size"))
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"msg": "Wrong Format : " + err.Error()})
+	}
+	board := algo.MatrixToStringHashOnly(algo.GridGenerator(size), " ")
+	c.IndentedJSON(http.StatusOK, gin.H{"size" : size, "board" : board})
 }

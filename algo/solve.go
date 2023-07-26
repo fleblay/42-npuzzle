@@ -96,7 +96,7 @@ func displayResult(algoResult Result, opt Option, param AlgoParameters, elapsed 
 func generateSolutionEntity(param AlgoParameters, algoResult Result, elapsed time.Duration) *models.Solution {
 	solution := models.Solution{
 		Size:        len(param.Board),
-		Hash:        MatrixToStringHashOnly(param.Board),
+		Hash:        MatrixToStringHashOnly(param.Board, "."),
 		Path:        string(algoResult.Path),
 		Length:      len(algoResult.Path),
 		Algo:        algoResult.Algo,

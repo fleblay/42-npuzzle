@@ -88,14 +88,14 @@ func openDir(dir string) []fs.FileInfo {
 	return files
 }
 
-func MatrixToStringHashOnly(matrix [][]int) string {
+func MatrixToStringHashOnly(matrix [][]int, separator string) string {
 
 	results := ""
 
 	for i := 0; i < len(matrix); i++ {
 
 		for j := 0; j < len(matrix[i]); j++ {
-			results += strconv.Itoa(matrix[i][j]) + "."
+			results += strconv.Itoa(matrix[i][j]) + separator
 		}
 	}
 	return results

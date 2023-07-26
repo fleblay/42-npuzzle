@@ -24,6 +24,12 @@ func (solution *Solution) GetSolutions(db *gorm.DB)(*[]Solution, error) {
 	return &solutions, err
 }
 
+func (solution *Solution) GetCount(db *gorm.DB)(int64, error) {
+	var solutions []Solution
+	res := db.Model(&Solution{}).Find(&solutions)
+	return res.RowsAffected, res.Error
+}
+
 func (solution *Solution) GetSolutionById(db *gorm.DB, id uint) error {
 	return db.Model(&Solution{}).First(solution, id).Error
 }
