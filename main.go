@@ -63,6 +63,7 @@ func main() {
 
 		router.POST("/solve", repo.Solve)
 		router.GET("/generate/:size", repo.Generate)
+		router.GET("/pick/:size", repo.GetRandomFromDB)
 
 		listen := os.Getenv("LISTEN")
 		if listen != "" {

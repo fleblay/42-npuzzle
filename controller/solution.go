@@ -75,3 +75,21 @@ func (repo *Repository) Generate(c *gin.Context) {
 	board := algo.MatrixToStringHashOnly(algo.GridGenerator(size), " ")
 	c.IndentedJSON(http.StatusOK, gin.H{"size" : size, "board" : board})
 }
+
+func (repo *Repository) GetRandomFromDB(c *gin.Context) {
+	size, err := strconv.Atoi(c.Param("size"))
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"msg": "Wrong Format : " + err.Error()})
+	}
+	solution := &models.Solution{}
+	count, err := solution.GetCountBySize(repo.DB, size)
+	fmt.Fprintln(os.Stderr, "Picking random grid from", count, "suitable entries")
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"msg": "Error Counting grids : " + err.Error()})
+	}
+	err = solution.GetRandomSolutionBySize(repo.DB, size)
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"msg": "Error Retrieving grids : " + err.Error()})
+	}
+	c.IndentedJSON(http.StatusOK, gin.H{"size" : solution.Size, "board" : solution.Hash})
+}

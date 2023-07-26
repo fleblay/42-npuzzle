@@ -25,9 +25,15 @@ func (solution *Solution) GetSolutions(db *gorm.DB)(*[]Solution, error) {
 }
 
 func (solution *Solution) GetCount(db *gorm.DB)(int64, error) {
-	var solutions []Solution
-	res := db.Model(&Solution{}).Find(&solutions)
-	return res.RowsAffected, res.Error
+	var count int64
+	res := db.Model(&Solution{}).Count(&count)
+	return count, res.Error
+}
+
+func (solution *Solution) GetCountBySize(db *gorm.DB, size int) (int64, error) {
+	var count int64
+	res := db.Model(&Solution{}).Where("size = ?", size).Count(&count)
+	return count, res.Error
 }
 
 func (solution *Solution) GetSolutionById(db *gorm.DB, id uint) error {
@@ -38,6 +44,10 @@ func (solution *Solution) GetSolutionBySize(db *gorm.DB, size int) (*[]Solution,
 	var solutions []Solution
 	err := db.Model(&Solution{}).Where("size = ?", size).Find(&solutions).Error
 	return &solutions, err
+}
+
+func (solution *Solution) GetRandomSolutionBySize(db *gorm.DB, size int) error {
+	return db.Model(&Solution{}).Order("RANDOM()").Where("size = ?", size).Limit(1).First(&solution).Error
 }
 
 func (solution *Solution) GetSolutionByHash(db *gorm.DB, hash string) error {
