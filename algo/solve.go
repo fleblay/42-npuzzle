@@ -73,7 +73,7 @@ func setParam(opt *Option, param *AlgoParameters) (err error) {
 		fmt.Fprintln(os.Stderr, "Generating a map with size", opt.MapSize)
 		param.Board = GridGenerator(opt.MapSize)
 	} else {
-		return errors.New("No valid map size or filename option missing")
+		return errors.New("No valid filename, stringMap or mapSize")
 	}
 	if err != nil {
 		return err
@@ -94,10 +94,9 @@ func displayResult(algoResult Result, opt Option, param AlgoParameters, elapsed 
 }
 
 func generateSolutionEntity(param AlgoParameters, algoResult Result, elapsed time.Duration) *models.Solution {
-	hash, _, _ := MatrixToStringNoOpti(param.Board, param.Workers, param.SeenNodesSplit)
 	solution := models.Solution{
 		Size:        len(param.Board),
-		Hash:        hash,
+		Hash:        MatrixToStringHashOnly(param.Board),
 		Path:        string(algoResult.Path),
 		Length:      len(algoResult.Path),
 		Algo:        algoResult.Algo,
@@ -110,18 +109,18 @@ func generateSolutionEntity(param AlgoParameters, algoResult Result, elapsed tim
 	return &solution
 }
 
-func Solve(opt *Option) (result []string, solution *models.Solution) {
+func Solve(opt *Option) (result [2]string, solution *models.Solution) {
 	param := AlgoParameters{}
 	algoResult := Result{}
 	if err := areFlagsOk(opt); err != nil {
-		return []string{"FLAGS", err.Error()}, nil
+		return [2]string{"FLAGS", err.Error()}, nil
 	}
 	if err := setParam(opt, &param); err != nil {
-		return []string{"PARAM", err.Error()}, nil
+		return [2]string{"PARAM", err.Error()}, nil
 	}
 	if param.Unsolvable {
 		fmt.Fprintln(os.Stderr, "Board is unsolvable", param.Board)
-		return []string{"UNSOLVABLE"}, nil
+		return [2]string{"UNSOLVABLE"}, nil
 	}
 	fmt.Fprintf(os.Stderr, "Board is : %v\nNow starting with : %v\n", param.Board, param.Eval.Name)
 	start := time.Now()
@@ -135,10 +134,10 @@ func Solve(opt *Option) (result []string, solution *models.Solution) {
 	elapsed := time.Now().Sub(start)
 	if algoResult.Path != nil {
 		displayResult(algoResult, *opt, param, elapsed)
-		return []string{"OK", string(algoResult.Path)}, generateSolutionEntity(param, algoResult, elapsed)
+		return [2]string{"OK", string(algoResult.Path)}, generateSolutionEntity(param, algoResult, elapsed)
 	} else if algoResult.RamFailure {
-		return []string{"RAM"}, nil
+		return [2]string{"RAM"}, nil
 	}
-	return []string{"END"}, nil
+	return [2]string{"END"}, nil
 }
 

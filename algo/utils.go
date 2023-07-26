@@ -88,7 +88,7 @@ func openDir(dir string) []fs.FileInfo {
 	return files
 }
 
-func matrixToString2(matrix [][]int) string {
+func MatrixToStringHashOnly(matrix [][]int) string {
 
 	results := ""
 

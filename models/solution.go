@@ -34,6 +34,10 @@ func (solution *Solution) GetSolutionBySize(db *gorm.DB, size int) (*[]Solution,
 	return &solutions, err
 }
 
+func (solution *Solution) GetSolutionByHash(db *gorm.DB, hash string) error {
+	return db.Model(&Solution{}).Where("hash = ?", hash).First(solution).Error
+}
+
 func (solution *Solution) UpdateOrCreateSolution(db *gorm.DB) error {
 	return db.Save(solution).Error
 }

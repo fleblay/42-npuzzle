@@ -3,13 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 	"github.com/fleblay/42-npuzzle/algo"
 	"github.com/fleblay/42-npuzzle/controller"
 	"github.com/fleblay/42-npuzzle/database"
 	"github.com/gin-gonic/gin"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 func handleFatalError(err error) {
@@ -34,8 +34,8 @@ func parseFlags(opt *algo.Option) {
 	flagSet.SetOutput(os.Stderr)
 
 	flagSet.StringVar(&opt.Filename, "f", "", "usage : -f [filename]")
-	flagSet.StringVar(&opt.StringInput, "string", "", "usage : -string [input as a string]. Ex : '3 1 2 3 4 5 6 8 7 0'")
-	flagSet.IntVar(&opt.MapSize, "s", 3, "usage : -s [board_size]")
+	flagSet.StringVar(&opt.StringInput, "string", "", "usage : -string [input as a string, starting with the size]. Ex : '3 1 2 3 4 5 6 8 7 0'")
+	flagSet.IntVar(&opt.MapSize, "s", 3, "usage : -s [board_size]. Use a board randomly generated of selected size")
 	flagSet.StringVar(&opt.Heuristic, "h", "astar_manhattan", "usage : -h [heuristic]")
 	flagSet.IntVar(&opt.Workers, "w", 1, "usage : -w [workers] between 1 and 16")
 	flagSet.IntVar(&opt.SeenNodesSplit, "split", 1, "usage : -split [setNodesSplit] between 1 and 256")
@@ -53,23 +53,28 @@ func main() {
 	if os.Getenv("API") == "true" {
 		db, err := database.ConnectDB("solutions.db")
 		handleFatalError(err)
-		database.CreateModel(db)
-
-		repo := controller.Repository{
-			DB : db,
-		}
+		err = database.CreateModel(db)
+		handleFatalError(err)
+		repo := controller.Repository{DB: db}
 
 		gin.SetMode(gin.ReleaseMode)
 		router := gin.Default()
 
 		router.POST("/", repo.Solve)
 
-		fmt.Println("Now reading request on localhost:8081")
-		err = router.Run("localhost:8081")
+		listen := os.Getenv("LISTEN")
+		if listen != "" {
+			fmt.Printf("Starting server on '%s'\n", listen)
+			err = router.Run(listen)
+		} else {
+			fmt.Println("Starting server with default value 'localhost:8081'")
+			err = router.Run("localhost:8081")
+		}
 		handleFatalError(err)
 	} else {
 		opt := &algo.Option{}
 		parseFlags(opt)
-		fmt.Println(algo.Solve(opt))
+		res, _ := algo.Solve(opt)
+		fmt.Println(res)
 	}
 }
