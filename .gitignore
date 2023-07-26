@@ -4,3 +4,6 @@ npuzzle
 
 #sqlite3 db files
 *.db
+
+#test files
+*.txt
