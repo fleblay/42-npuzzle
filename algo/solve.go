@@ -78,7 +78,7 @@ func setParam(opt *Option, param *AlgoParameters) (err error) {
 	if err != nil {
 		return err
 	}
-	if !IsSolvable(param.Board) {
+	if ok, _ := IsSolvable(param.Board) ; !ok {
 		fmt.Fprintln(os.Stderr, "Board is not solvable")
 		param.Unsolvable = true
 	}

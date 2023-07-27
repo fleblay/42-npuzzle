@@ -19,7 +19,7 @@ func GridGenerator(mapSize int) (board [][]int) {
 			board[j-1][i%mapSize] = number
 			i++
 		}
-		if IsSolvable(board) {
+		if ok, inversion := IsSolvable(board) ; ok && inversion < 12 {
 			break
 		}
 	}

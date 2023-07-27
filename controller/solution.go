@@ -73,7 +73,7 @@ func (repo *Repository) Generate(c *gin.Context) {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"msg": "Wrong Format : " + err.Error()})
 	}
 	board := algo.MatrixToStringHashOnly(algo.GridGenerator(size), " ")
-	c.IndentedJSON(http.StatusOK, gin.H{"size" : size, "board" : board})
+	c.IndentedJSON(http.StatusOK, gin.H{"size": size, "board": board})
 }
 
 func (repo *Repository) GetRandomFromDB(c *gin.Context) {
@@ -91,8 +91,23 @@ func (repo *Repository) GetRandomFromDB(c *gin.Context) {
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"msg": "Error Retrieving grids : " + err.Error()})
 	}
-	c.IndentedJSON(http.StatusOK, gin.H{"size" : solution.Size, "board" : strings.Join(strings.Split(solution.Hash, "."), " ")})
+	c.IndentedJSON(http.StatusOK, gin.H{"size": solution.Size, "board": strings.Join(strings.Split(solution.Hash, "."), " ")})
 }
 
-func (repo *Repository) IsSolved(c *gin.Context) {
+//TODO : Change Solve route in order to use this code for DRY purpose
+func (repo *Repository) GetSolution(c *gin.Context) {
+	solution := &models.Solution{}
+	var newRequest SolveRequest
+	if err := c.BindJSON(&newRequest); err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"msg": "Wrong Format : " + err.Error()})
+	}
+	fmt.Fprintln(os.Stderr, "Received request :", newRequest)
+	StringInput := strconv.Itoa(newRequest.Size) + " " + newRequest.Board
+	if err := GetSolutionByStringInput(solution, repo.DB, StringInput); err == nil {
+		fmt.Fprintln(os.Stderr, "Found entry in DB !")
+		c.IndentedJSON(http.StatusOK, gin.H{"status": "DB", "solution": solution.Path})
+		return
+	} else {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"status" : "NOTFOUND"})
+	}
 }

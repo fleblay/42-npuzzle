@@ -62,7 +62,7 @@ func main() {
 		router := gin.Default()
 
 		router.POST("/solve", repo.Solve)
-		router.POST("/issolved", repo.IsSolved)
+		router.POST("/solution", repo.GetSolution)
 		router.GET("/generate/:size", repo.Generate)
 		router.GET("/pick/:size", repo.GetRandomFromDB)
 

@@ -35,7 +35,7 @@ func matrixToTableSnail(matrix [][]int) []int {
 	return table
 }
 
-func IsSolvable(board [][]int) bool {
+func IsSolvable(board [][]int) (ok bool, inversion int) {
 
 	board1d := matrixToTableSnail(board)
 	inversions := 0
@@ -47,5 +47,5 @@ func IsSolvable(board [][]int) bool {
 			}
 		}
 	}
-	return inversions%2 == 0
+	return inversions%2 == 0, inversion
 }
