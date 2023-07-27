@@ -91,5 +91,8 @@ func (repo *Repository) GetRandomFromDB(c *gin.Context) {
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"msg": "Error Retrieving grids : " + err.Error()})
 	}
-	c.IndentedJSON(http.StatusOK, gin.H{"size" : solution.Size, "board" : solution.Hash})
+	c.IndentedJSON(http.StatusOK, gin.H{"size" : solution.Size, "board" : strings.Join(strings.Split(solution.Hash, "."), " ")})
+}
+
+func (repo *Repository) IsSolved(c *gin.Context) {
 }
