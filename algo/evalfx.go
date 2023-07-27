@@ -7,6 +7,34 @@ func dijkstra(pos, startPos, goalPos [][]int, path []byte) int {
 	return score
 }
 
+func greedy_manhattan_conflict(pos, startPos, goalPos [][]int, path []byte) int {
+	score := 0
+	for j, row := range pos {
+		for i, value := range row {
+			if value != goalPos[j][i] {
+				goodPosition := getValuePostion(goalPos, value)
+				score += int(math.Abs(float64(goodPosition.X-i)) + math.Abs(float64(goodPosition.Y-j)))
+				if goodPosition.Y != j/* && goodPosition.X != i*/{
+					continue
+				}
+				for k := i + 1; k < len(row); k++ {
+					if rightValue, rightValueGoodPos := row[k], getValuePostion(goalPos, row[k]); rightValue != 0 && rightValue != goalPos[j][k] && rightValueGoodPos.Y == j && rightValueGoodPos.X <= i {
+						score += 2
+					}
+				}
+				/*
+				for k := j + 1; k < len(pos); k++ {
+					if downValue, downValueGoodPos := pos[k][i], getValuePostion(goalPos, pos[k][i]); downValue != 0 && downValue != goalPos[k][i] && downValueGoodPos.X == i && downValueGoodPos.Y <= j {
+						score += 2
+					}
+				}
+				*/
+			}
+		}
+	}
+	return score
+}
+
 func greedy_manhattan(pos, startPos, goalPos [][]int, path []byte) int {
 	score := 0
 	for j, row := range goalPos {
@@ -32,18 +60,6 @@ func greedy_hamming(pos, startPos, goalPos [][]int, path []byte) int {
 	return score
 }
 
-func greedy_inv(pos, startPos, goalPos [][]int, path []byte) int {
-	flattenedPos := matrixToTableSnail(pos)
-	inversion := 0
-	for i := range flattenedPos {
-		for j := i + 1; j < len(flattenedPos); j++ {
-			if flattenedPos[i] > 0 && flattenedPos[j] > 0 && flattenedPos[i] > flattenedPos[j] {
-				inversion++
-			}
-		}
-	}
-	return inversion
-}
 func astar_hamming(pos, startPos, goalPos [][]int, path []byte) int {
 	return len(path) + 1 + greedy_hamming(pos, startPos, goalPos, path)
 }
@@ -55,6 +71,9 @@ func astar_manhattan_generator(weight float64) EvalFx {
 	}
 }
 
-func astar_inv(pos, startPos, goalPos [][]int, path []byte) int {
-	return len(path) + 1 + greedy_inv(pos, startPos, goalPos, path)
+func astar_manhattan_generator_conflict(weight float64) EvalFx {
+	return func(pos, startPos, goalPos [][]int, path []byte) int {
+		initDist := len(path) + 1
+		return initDist + int(weight*float64(greedy_manhattan_conflict(pos, startPos, goalPos, path)))
+	}
 }

@@ -3,11 +3,10 @@ package algo
 var Evals = []Eval{
 	{"dijkstra", dijkstra},
 	{"greedy_hamming", greedy_hamming},
-	{"greedy_inv", greedy_inv},
 	{"greedy_manhattan", greedy_manhattan},
 	{"astar_hamming", astar_hamming},
-	{"astar_inv", astar_inv},
 	{"astar_manhattan", astar_manhattan_generator(1)},
+	{"astar_manhattan_conflict", astar_manhattan_generator_conflict(1)},
 	{"astar_manhattan2", astar_manhattan_generator(2)},
 }
 
