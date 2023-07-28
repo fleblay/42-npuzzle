@@ -72,7 +72,7 @@ func astar_hamming(pos, startPos, goalPos [][]int, path []byte) int {
 func astar_manhattan_generator(weight float64) EvalFx {
 	return func(pos, startPos, goalPos [][]int, path []byte) int {
 		initDist := len(path) + 1
-		return initDist + int(weight*float64(greedy_manhattan_conflict(pos, startPos, goalPos, path)))
+		return initDist + int(weight*float64(greedy_manhattan(pos, startPos, goalPos, path)))
 	}
 }
 
