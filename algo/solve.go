@@ -22,10 +22,10 @@ func InitOptionForApiUse(opt *Option) {
 
 
 func areFlagsOk(opt *Option) (err error) {
-	if opt.Workers < 1 || opt.Workers > 16 {
+	if opt.Workers < 1 || opt.Workers > 32 {
 		return errors.New("Invalid number of workers")
 	}
-	if opt.SeenNodesSplit < 1 || opt.SeenNodesSplit > 256 {
+	if opt.SeenNodesSplit < 1 || opt.SeenNodesSplit > 4096 {
 		return errors.New("Invalid number of splits")
 	}
 	if opt.Filename == "" && opt.StringInput == "" && (opt.MapSize < 3) {
