@@ -11,18 +11,13 @@ func greedy_manhattan_conflict(pos, startPos, goalPos [][]int, path []byte) int 
 	score := 0
 	for j, row := range pos {
 		for i, value := range row {
-			goodPosition := getValuePostion(goalPos, value)
-			if value != goalPos[j][i] {
+			if value != goalPos[j][i] && value != 0 {
+				goodPosition := getValuePostion(goalPos, value)
 				score += int(math.Abs(float64(goodPosition.X-i)) + math.Abs(float64(goodPosition.Y-j)))
-			}
-			/*
-			if goodPosition.Y != j {
-				continue
-			}
-			*/
-			for k := i + 1; k < len(row); k++ {
-				if rightValue, rightValueGoodPos := row[k], getValuePostion(goalPos, row[k]); rightValue != 0 && rightValue != goalPos[j][k] && rightValueGoodPos.Y == j && rightValueGoodPos.X <= i {
-					score += 2
+				for k := i + 1; k < len(row); k++ {
+					if rightValue, rightValueGoodPos := row[k], getValuePostion(goalPos, row[k]); goodPosition.Y == j && rightValue != 0 && rightValue != goalPos[j][k] && rightValueGoodPos.Y == j && rightValueGoodPos.X <= i {
+						score += 2
+					}
 				}
 			}
 			/*
@@ -30,7 +25,7 @@ func greedy_manhattan_conflict(pos, startPos, goalPos [][]int, path []byte) int 
 					continue
 				}
 				for k := j + 1; k < len(pos); k++ {
-					if downValue, downValueGoodPos := pos[k][i], getValuePostion(goalPos, pos[k][i]); downValue != 0 && downValue != goalPos[k][i] && downValueGoodPos.X == i && downValueGoodPos.Y <= j {
+					if downValue, downValueGoodPos := pos[k][i], getValuePostion(goalPos, pos[k][i]); goodPosition.X ==i && downValue != 0 && downValue != goalPos[k][i] && downValueGoodPos.X == i {
 						score += 2
 					}
 				}
@@ -42,11 +37,11 @@ func greedy_manhattan_conflict(pos, startPos, goalPos [][]int, path []byte) int 
 
 func greedy_manhattan(pos, startPos, goalPos [][]int, path []byte) int {
 	score := 0
-	for j, row := range goalPos {
+	for j, row := range pos {
 		for i, value := range row {
-			if pos[j][i] != value {
-				wrongPositon := getValuePostion(pos, value)
-				score += int(math.Abs(float64(wrongPositon.X-i)) + math.Abs(float64(wrongPositon.Y-j)))
+			if value != goalPos[j][i] && value != 0 {
+				goodPositon := getValuePostion(goalPos, value)
+				score += int(math.Abs(float64(goodPositon.X-i)) + math.Abs(float64(goodPositon.Y-j)))
 			}
 		}
 	}
@@ -57,7 +52,7 @@ func greedy_hamming(pos, startPos, goalPos [][]int, path []byte) int {
 	score := 0
 	for i, row := range goalPos {
 		for j, value := range row {
-			if pos[i][j] != value {
+			if pos[i][j] != value && value != 0 {
 				score++
 			}
 		}

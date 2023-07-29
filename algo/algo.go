@@ -69,8 +69,9 @@ func checkOptimalSolution(currentNode *Item, data *safeData) bool {
 		}
 		data.MuQueue[i].Unlock()
 	}
+	//Check if at least one of the nodes has a score strictly inferior
 	for i := range bestNodes {
-		if bestNodes[i] != nil && bestNodes[i].node.score <= currentNode.node.score {
+		if bestNodes[i] != nil && bestNodes[i].node.score < currentNode.node.score {
 			for j := range bestNodes {
 				data.MuQueue[j].Lock()
 				if bestNodes[j] != nil {
