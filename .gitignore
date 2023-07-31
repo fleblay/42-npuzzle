@@ -7,3 +7,6 @@ npuzzle
 
 #test files
 *.txt
+
+#node modules
+./15puzzle/node_modules/*
