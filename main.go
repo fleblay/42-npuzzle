@@ -37,8 +37,8 @@ func parseFlags(opt *algo.Option) {
 	flagSet.StringVar(&opt.StringInput, "string", "", "usage : -string [input as a string, starting with the size]. Ex : '3 1 2 3 4 5 6 8 7 0'")
 	flagSet.IntVar(&opt.MapSize, "s", 3, "usage : -s [board_size]. Use a board randomly generated of selected size")
 	flagSet.StringVar(&opt.Heuristic, "h", "astar_manhattan_conflict", "usage : -h [heuristic]")
-	flagSet.IntVar(&opt.Workers, "w", 1, "usage : -w [workers] between 1 and 16")
-	flagSet.IntVar(&opt.SeenNodesSplit, "split", 1, "usage : -split [setNodesSplit] between 1 and 2048")
+	flagSet.IntVar(&opt.Workers, "w", 8, "usage : -w [workers] between 1 and 32")
+	flagSet.IntVar(&opt.SeenNodesSplit, "split", 96, "usage : -split [setNodesSplit] between 1 and 96")
 	flagSet.IntVar(&opt.SpeedDisplay, "speed", 100, "usage : -speed [speedDisplay] between 1 and 2048")
 	flagSet.BoolVar(&opt.NoIterativeDepth, "no-i", false, "usage : -no-i. Use A* instead of Iterative Depth A* (aka IDA*). WAY faster but increase A LOT memory consumption")
 	flagSet.BoolVar(&opt.Debug, "d", false, "usage : -d. Activate debug info")
@@ -49,22 +49,6 @@ func parseFlags(opt *algo.Option) {
 
 func main() {
 	handleSignals()
-	/*
-	board := [][]int{
-		{1, 2, 4, 3},
-		{12, 13, 14, 5},
-		{11, 0, 15, 6},
-		{10, 9, 8, 7},
-	}
-	start := [][]int{
-		{1, 2, 3, 4},
-		{5, 6, 7, 8},
-		{9, 10, 11, 12},
-		{13, 14, 15, 0},
-	}
-	fmt.Println(algo.Greedy_conflict(board, start, algo.Goal(4), []byte{}))
-	os.Exit(1)
-	*/
 
 	if os.Getenv("API") == "true" {
 		db, err := database.ConnectDB("solutions.db")

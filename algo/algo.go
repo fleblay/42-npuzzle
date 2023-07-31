@@ -49,9 +49,20 @@ func launchAstarWorkers(param AlgoParameters, data *safeData) (result Result) {
 	switch {
 	case data.Win == true:
 		fmt.Fprintln(os.Stderr, "Found a solution")
-		for _, value := range data.SeenNodes {
-			data.ClosedSetComplexity += len(value)
+		min, max, indexmin, indexmax := 1<<31, 0, -1, -1
+		for index, value := range data.SeenNodes {
+			currLen := len(value)
+			data.ClosedSetComplexity += currLen
+			if currLen > max {
+				max = currLen
+				indexmax = index
+			}
+			if currLen < min {
+				min = currLen
+				indexmin = index
+			}
 		}
+		fmt.Fprintf(os.Stderr, "NodePool max count difference : %d k for [%d] - [%d]. Mean : %d k\n", (max-min)/1000, indexmax, indexmin, data.ClosedSetComplexity/(1000*len(data.SeenNodes)))
 	case data.RamFailure == true:
 		fmt.Fprintln(os.Stderr, "RAM Failure")
 	}
@@ -125,7 +136,7 @@ func algo(param AlgoParameters, data *safeData, workerIndex int) {
 		if currentNode == nil {
 			continue
 		}
-		if foundSol != nil && currentNode.node.score > foundSol.node.score {
+		if foundSol != nil && currentNode.node.score >= foundSol.node.score {
 			data.Mu.Lock()
 			fmt.Fprintf(os.Stderr, "\x1b[32m[%2d] - Found an OPTIMAL solution\n\x1b[0m", workerIndex)
 			terminateSearch(data, foundSol.node.path, foundSol.node.score)
@@ -144,6 +155,16 @@ func algo(param AlgoParameters, data *safeData, workerIndex int) {
 				fmt.Fprintf(os.Stderr, "\x1b[33m[%2d] - Found a solution : Caching result\n\x1b[0m", workerIndex)
 				foundSol = currentNode
 				data.Mu.Unlock()
+			}
+		}
+		if tries%1000 == 0 {
+			availableRAM, err := getAvailableRAM()
+			if availableRAM>>20 < MinRAMAvailableMB || err != nil {
+				fmt.Fprintf(os.Stderr, "[%d] - Not enough RAM[%v MB] to continue or Fatal (error reading RAM status)\n", workerIndex, availableRAM>>20)
+				data.Mu.Lock()
+				data.RamFailure = true
+				data.Mu.Unlock()
+				continue
 			}
 		}
 		getNextMoves(startPos, goalPos, param.Eval.Fx, currentNode.node.path, currentNode, data, workerIndex, param.Workers, param.SeenNodesSplit)
@@ -167,17 +188,6 @@ func getAvailableRAM() (uint64, error) {
 }
 
 func getNextMoves(startPos, goalPos [][]int, scoreFx EvalFx, path []byte, currentNode *Item, data *safeData, index int, workers int, seenNodesSplit int) {
-	//To be removed from this fx, plus reading tries instead of data.tries
-	if data.Tries%100000 == 0 {
-		availableRAM, err := getAvailableRAM()
-		if availableRAM>>20 < MinRAMAvailableMB || err != nil {
-			fmt.Fprintf(os.Stderr, "[%d] - Not enough RAM[%v MB] to continue or Fatal (error reading RAM status)\n", index, availableRAM>>20)
-			data.Mu.Lock()
-			data.RamFailure = true
-			data.Mu.Unlock()
-			return
-		}
-	}
 	for _, dir := range Directions {
 		if len(path) > 0 {
 			conflictStr := string(path[len(path)-1]) + string(dir.name)

@@ -47,6 +47,12 @@ func ida(data *idaData) (newMaxScore int, found bool) {
 	}
 	minScoreAboveCutOff := 1 << 30
 	for _, dir := range Directions {
+		if len(data.Path) > 0 {
+			conflictStr := string(data.Path[len(data.Path)-1]) + string(dir.name)
+			if conflictStr == "LR" || conflictStr == "RL" || conflictStr == "UD" || conflictStr == "DU" {
+				continue
+			}
+		}
 		ok, nextPos := dir.fx(currentState)
 		if !ok {
 			continue

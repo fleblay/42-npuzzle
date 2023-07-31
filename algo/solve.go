@@ -13,10 +13,11 @@ import (
 
 func InitOptionForApiUse(opt *Option) {
 	opt.DisableUI = true
-	opt.Heuristic = "astar_manhattan"
+	opt.Heuristic = "astar_manhattan_conflict"
 	opt.NoIterativeDepth = true
-	opt.Workers = 4
-	opt.SeenNodesSplit = 16
+	opt.Workers = 8
+	opt.SeenNodesSplit = 96
+	//To be changed in prod
 	opt.Debug = true
 }
 
@@ -25,7 +26,7 @@ func areFlagsOk(opt *Option) (err error) {
 	if opt.Workers < 1 || opt.Workers > 32 {
 		return errors.New("Invalid number of workers")
 	}
-	if opt.SeenNodesSplit < 1 || opt.SeenNodesSplit > 4096 {
+	if opt.SeenNodesSplit < 1 || opt.SeenNodesSplit > 96 {
 		return errors.New("Invalid number of splits")
 	}
 	if opt.Filename == "" && opt.StringInput == "" && (opt.MapSize < 3) {

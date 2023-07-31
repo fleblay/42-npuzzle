@@ -118,8 +118,8 @@ func matrixToStringOptimal(matrix [][]int, worker int, seenNodeMap int) (key str
 	for i := 0; i < size; i++ {
 
 		for j := 0; j < size; j++ {
-			queueIndex += matrix[i][j] * i * j
-			seenNodeIndex += matrix[i][j] * i * j
+			queueIndex += matrix[i][j] * (i + 0) * (j + 0)
+			seenNodeIndex += matrix[i][j] * (i + 0) * (j + 0)
 			results[spot] = byte(matrix[i][j] / 10)
 			results[spot+1] = byte(matrix[i][j] % 10)
 			results[spot+2] = '.'
@@ -139,8 +139,8 @@ func MatrixToStringNoOpti(matrix [][]int, worker int, seenNodeMap int) (key stri
 	for i := 0; i < size; i++ {
 
 		for j := 0; j < size; j++ {
-			queueIndex += matrix[i][j] * i * j
-			seenNodeIndex += matrix[i][j] * i * j
+			queueIndex *= matrix[i][j] * (i + 0) * (j + 0)
+			seenNodeIndex *= matrix[i][j] * (i + 0) * (j + 0)
 			results += strconv.Itoa(matrix[i][j]) + "."
 
 		}
