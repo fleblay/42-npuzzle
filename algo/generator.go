@@ -26,7 +26,7 @@ func GridGenerator(mapSize int) (board [][]int) {
 	return board
 }
 
-func goal(mapSize int) (goal [][]int) {
+func Goal(mapSize int) (goal [][]int) {
 
 	goal = make([][]int, mapSize)
 	for i := range goal {

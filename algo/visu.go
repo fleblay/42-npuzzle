@@ -103,7 +103,7 @@ func playBoard(board [][]int) bool {
 		case "a":
 			moveRight(board)
 		}
-		if isEqual(board, goal(len(board))) {
+		if isEqual(board, Goal(len(board))) {
 			return handleWinScenario()
 		}
 		table.Rows = convertBoard(board)

@@ -87,7 +87,7 @@ func checkOptimalSolution(currentNode *Item, data *safeData) bool {
 }
 
 func algo(param AlgoParameters, data *safeData, workerIndex int) {
-	goalPos := goal(len(param.Board))
+	goalPos := Goal(len(param.Board))
 	startPos := param.Board
 	var foundSol *Item
 	startAlgo := time.Now()
@@ -167,7 +167,8 @@ func getAvailableRAM() (uint64, error) {
 }
 
 func getNextMoves(startPos, goalPos [][]int, scoreFx EvalFx, path []byte, currentNode *Item, data *safeData, index int, workers int, seenNodesSplit int) {
-	if data.Tries%1000 == 0 {
+	//To be removed from this fx, plus reading tries instead of data.tries
+	if data.Tries%100000 == 0 {
 		availableRAM, err := getAvailableRAM()
 		if availableRAM>>20 < MinRAMAvailableMB || err != nil {
 			fmt.Fprintf(os.Stderr, "[%d] - Not enough RAM[%v MB] to continue or Fatal (error reading RAM status)\n", index, availableRAM>>20)

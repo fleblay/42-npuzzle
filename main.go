@@ -3,13 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
 	"github.com/fleblay/42-npuzzle/algo"
 	"github.com/fleblay/42-npuzzle/controller"
 	"github.com/fleblay/42-npuzzle/database"
 	"github.com/gin-gonic/gin"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func handleFatalError(err error) {
@@ -49,6 +49,22 @@ func parseFlags(opt *algo.Option) {
 
 func main() {
 	handleSignals()
+	/*
+	board := [][]int{
+		{1, 2, 4, 3},
+		{12, 13, 14, 5},
+		{11, 0, 15, 6},
+		{10, 9, 8, 7},
+	}
+	start := [][]int{
+		{1, 2, 3, 4},
+		{5, 6, 7, 8},
+		{9, 10, 11, 12},
+		{13, 14, 15, 0},
+	}
+	fmt.Println(algo.Greedy_conflict(board, start, algo.Goal(4), []byte{}))
+	os.Exit(1)
+	*/
 
 	if os.Getenv("API") == "true" {
 		db, err := database.ConnectDB("solutions.db")
