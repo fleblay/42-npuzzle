@@ -3,10 +3,10 @@ package algo
 import (
 	"container/heap"
 	"fmt"
+	"github.com/shirou/gopsutil/v3/mem"
 	"os"
 	"sync"
 	"time"
-	"github.com/shirou/gopsutil/v3/mem"
 )
 
 func initData(param AlgoParameters) (data safeData) {
@@ -166,7 +166,6 @@ func getAvailableRAM() (uint64, error) {
 	return availableRAM, nil
 }
 
-
 func getNextMoves(startPos, goalPos [][]int, scoreFx EvalFx, path []byte, currentNode *Item, data *safeData, index int, workers int, seenNodesSplit int) {
 	if data.Tries%1000 == 0 {
 		availableRAM, err := getAvailableRAM()
@@ -179,6 +178,12 @@ func getNextMoves(startPos, goalPos [][]int, scoreFx EvalFx, path []byte, curren
 		}
 	}
 	for _, dir := range Directions {
+		if len(path) > 0 {
+			conflictStr := string(path[len(path)-1]) + string(dir.name)
+			if conflictStr == "LR" || conflictStr == "RL" || conflictStr == "UD" || conflictStr == "DU" {
+				continue
+			}
+		}
 		ok, nextPos := dir.fx(currentNode.node.world)
 		if !ok {
 			continue
