@@ -11,10 +11,12 @@ import (
 	"github.com/fleblay/42-npuzzle/models"
 )
 
-func InitOptionForApiUse(opt *Option) {
+func InitOptionForApiUse(opt *Option, algo string) {
 	opt.DisableUI = true
 	opt.Heuristic = "astar_manhattan_conflict"
-	opt.NoIterativeDepth = true
+	if (algo == "A*" || algo == "default") {
+		opt.NoIterativeDepth = true
+	}
 	opt.Workers = 8
 	opt.SeenNodesSplit = 96
 	//To be changed in prod

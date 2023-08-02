@@ -57,13 +57,17 @@ func main() {
 		count, err := database.CreateModel(db)
 		fmt.Printf("Successfully connected to DB with %d items\n", count)
 		handleFatalError(err)
-		repo := controller.Repository{DB: db}
+		repoASTAR := controller.Repository{DB: db, Algo : "A*"}
+		repoIDA := controller.Repository{DB: db, Algo : "IDA"}
+		repo := controller.Repository{DB: db, Algo : "default"}
 
 		gin.SetMode(gin.ReleaseMode)
 		router := gin.Default()
 		router.Use(cors.Default())
 
-		router.POST("/solve", repo.Solve)
+		router.POST("/solve/default", repo.Solve)
+		router.POST("/solve/ida", repoIDA.Solve)
+		router.POST("/solve/astar", repoASTAR.Solve)
 		router.POST("/solution", repo.GetSolution)
 		router.GET("/generate/:size", repo.Generate)
 		router.GET("/pick/:size", repo.GetRandomFromDB)

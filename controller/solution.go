@@ -21,6 +21,7 @@ type SolveRequest struct {
 
 type Repository struct {
 	DB *gorm.DB
+	Algo string
 }
 
 func GetSolutionByStringInput(solution *models.Solution, db *gorm.DB, stringInput string) error {
@@ -35,7 +36,7 @@ func GetSolutionByStringInput(solution *models.Solution, db *gorm.DB, stringInpu
 
 func (repo *Repository) Solve(c *gin.Context) {
 	opt := &algo.Option{}
-	algo.InitOptionForApiUse(opt)
+	algo.InitOptionForApiUse(opt, repo.Algo)
 	var result [3]string
 	fallback := false
 	solution := &models.Solution{}
@@ -55,7 +56,7 @@ func (repo *Repository) Solve(c *gin.Context) {
 		fmt.Fprintf(os.Stderr, "No entry found in DB (%s) processing request\n", err.Error())
 	}
 	result, solution = algo.Solve(opt)
-	if result[0] == "RAM" && opt.NoIterativeDepth == true {
+	if result[0] == "RAM" && opt.NoIterativeDepth == true && repo.Algo == "default" {
 		fmt.Fprintln(os.Stderr, "Solver killed because of RAM, trying again with IDA*")
 		opt.NoIterativeDepth = false
 		fallback = true
@@ -70,9 +71,9 @@ func (repo *Repository) Solve(c *gin.Context) {
 		"status": result[0],
 		"solution": result[1],
 		"time": result[2],
-		"algo" : solution.Algo,
+		"algo" : repo.Algo,
 		"fallback" : fallback,
-		"workers" : solution.Workers,
+		"workers" : opt.Workers,
 	})
 }
 
