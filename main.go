@@ -7,6 +7,7 @@ import (
 	"github.com/fleblay/42-npuzzle/controller"
 	"github.com/fleblay/42-npuzzle/database"
 	"github.com/gin-gonic/gin"
+	cors "github.com/rs/cors/wrapper/gin"
 	"os"
 	"os/signal"
 	"syscall"
@@ -60,6 +61,7 @@ func main() {
 
 		gin.SetMode(gin.ReleaseMode)
 		router := gin.Default()
+		router.Use(cors.Default())
 
 		router.POST("/solve", repo.Solve)
 		router.POST("/solution", repo.GetSolution)
@@ -71,8 +73,8 @@ func main() {
 			fmt.Printf("Starting server on '%s'\n", listen)
 			err = router.Run(listen)
 		} else {
-			fmt.Println("Starting server with default value 'localhost:8081'")
-			err = router.Run("localhost:8081")
+			fmt.Println("Starting server with default value '0.0.0.0:8081'")
+			err = router.Run("0.0.0.0:8081")
 		}
 		handleFatalError(err)
 	} else {

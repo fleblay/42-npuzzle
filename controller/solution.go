@@ -36,7 +36,8 @@ func GetSolutionByStringInput(solution *models.Solution, db *gorm.DB, stringInpu
 func (repo *Repository) Solve(c *gin.Context) {
 	opt := &algo.Option{}
 	algo.InitOptionForApiUse(opt)
-	var result [2]string
+	var result [3]string
+	fallback := false
 	solution := &models.Solution{}
 
 	var newRequest SolveRequest
@@ -57,6 +58,7 @@ func (repo *Repository) Solve(c *gin.Context) {
 	if result[0] == "RAM" && opt.NoIterativeDepth == true {
 		fmt.Fprintln(os.Stderr, "Solver killed because of RAM, trying again with IDA*")
 		opt.NoIterativeDepth = false
+		fallback = true
 		result, solution = algo.Solve(opt)
 	}
 	if result[0] == "OK" {
@@ -64,7 +66,14 @@ func (repo *Repository) Solve(c *gin.Context) {
 			fmt.Fprintln(os.Stderr, "Failure to save new solution to DB")
 		}
 	}
-	c.IndentedJSON(http.StatusOK, gin.H{"status": result[0], "solution": result[1]})
+	c.IndentedJSON(http.StatusOK, gin.H{
+		"status": result[0],
+		"solution": result[1],
+		"time": result[2],
+		"algo" : solution.Algo,
+		"fallback" : fallback,
+		"workers" : solution.Workers,
+	})
 }
 
 func (repo *Repository) Generate(c *gin.Context) {

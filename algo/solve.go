@@ -110,18 +110,18 @@ func generateSolutionEntity(param AlgoParameters, algoResult Result, elapsed tim
 	return &solution
 }
 
-func Solve(opt *Option) (result [2]string, solution *models.Solution) {
+func Solve(opt *Option) (result [3]string, solution *models.Solution) {
 	param := AlgoParameters{}
 	algoResult := Result{}
 	if err := areFlagsOk(opt); err != nil {
-		return [2]string{"FLAGS", err.Error()}, nil
+		return [3]string{"FLAGS", err.Error()}, nil
 	}
 	if err := setParam(opt, &param); err != nil {
-		return [2]string{"PARAM", err.Error()}, nil
+		return [3]string{"PARAM", err.Error()}, nil
 	}
 	if param.Unsolvable {
 		fmt.Fprintln(os.Stderr, "Board is unsolvable", param.Board)
-		return [2]string{"UNSOLVABLE"}, nil
+		return [3]string{"UNSOLVABLE"}, nil
 	}
 	fmt.Fprintf(os.Stderr, "Board is : %v\nNow starting with : %v\n", param.Board, param.Eval.Name)
 	start := time.Now()
@@ -135,10 +135,10 @@ func Solve(opt *Option) (result [2]string, solution *models.Solution) {
 	elapsed := time.Now().Sub(start)
 	if algoResult.Path != nil {
 		displayResult(algoResult, *opt, param, elapsed)
-		return [2]string{"OK", string(algoResult.Path)}, generateSolutionEntity(param, algoResult, elapsed)
+		return [3]string{"OK", string(algoResult.Path), elapsed.String()}, generateSolutionEntity(param, algoResult, elapsed)
 	} else if algoResult.RamFailure {
-		return [2]string{"RAM"}, nil
+		return [3]string{"RAM", "", elapsed.String()}, nil
 	}
-	return [2]string{"END"}, nil
+	return [3]string{"END"}, nil
 }
 
