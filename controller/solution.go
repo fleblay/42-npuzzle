@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"runtime/debug"
 	"strconv"
 	"strings"
 
@@ -35,6 +36,7 @@ func GetSolutionByStringInput(solution *models.Solution, db *gorm.DB, stringInpu
 }
 
 func (repo *Repository) Solve(c *gin.Context) {
+	debug.FreeOSMemory()
 	opt := &algo.Option{}
 	algo.InitOptionForApiUse(opt, repo.Algo)
 	var result [3]string
@@ -75,6 +77,7 @@ func (repo *Repository) Solve(c *gin.Context) {
 		"fallback" : fallback,
 		"workers" : opt.Workers,
 	})
+	debug.FreeOSMemory()
 }
 
 func (repo *Repository) Generate(c *gin.Context) {

@@ -1,3 +1,3 @@
 #!/bin/bash
 make
-API=true ./npuzzle -d
+GOGC=200 GOMEMLIMIT=7GiB API=true ./npuzzle -d
