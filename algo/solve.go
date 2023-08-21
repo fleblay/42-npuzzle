@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -33,6 +34,9 @@ func areFlagsOk(opt *Option) (err error) {
 	}
 	if opt.Filename == "" && opt.StringInput == "" && (opt.MapSize < 3) {
 		return errors.New("Invalid map size")
+	}
+	if opt.RAMMaxGB < 1 || opt.RAMMaxGB > 32 {
+		return errors.New("Invalid Max Ram GB (must be between 1 and 32GB")
 	}
 	for _, current := range Evals {
 		if current.Name == opt.Heuristic {
@@ -85,7 +89,8 @@ func setParam(opt *Option, param *AlgoParameters) (err error) {
 		fmt.Fprintln(os.Stderr, "Board is not solvable")
 		param.Unsolvable = true
 	}
-	return nil
+	param.RAMMaxGB = opt.RAMMaxGB
+	return err
 }
 
 func displayResult(algoResult Result, opt Option, param AlgoParameters, elapsed time.Duration) {
@@ -139,7 +144,7 @@ func Solve(opt *Option) (result [3]string, solution *models.Solution) {
 		displayResult(algoResult, *opt, param, elapsed)
 		return [3]string{"OK", string(algoResult.Path), elapsed.String()}, generateSolutionEntity(param, algoResult, elapsed)
 	} else if algoResult.RamFailure {
-		return [3]string{"RAM", "", elapsed.String()}, nil
+		return [3]string{"RAM", strconv.Itoa(algoResult.ClosedSetComplexity), elapsed.String()}, nil
 	}
 	return [3]string{"END"}, nil
 }

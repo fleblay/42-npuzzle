@@ -31,6 +31,8 @@ func initData(param AlgoParameters) (data safeData) {
 	data.MuSeen = make([]sync.Mutex, param.SeenNodesSplit)
 	data.MaxSizeQueue = make([]int, param.Workers)
 	data.Idle = 0
+	currentAvailableRAM, _ := GetAvailableRAM()
+	data.RAMMin = currentAvailableRAM - (param.RAMMaxGB << 30)
 	return
 }
 
@@ -46,23 +48,23 @@ func launchAstarWorkers(param AlgoParameters, data *safeData) (result Result) {
 		}(param, data, i)
 	}
 	wg.Wait()
+	min, max, indexmin, indexmax := 1<<31, 0, -1, -1
+	for index, value := range data.SeenNodes {
+		currLen := len(value)
+		data.ClosedSetComplexity += currLen
+		if currLen > max {
+			max = currLen
+			indexmax = index
+		}
+		if currLen < min {
+			min = currLen
+			indexmin = index
+		}
+	}
+	fmt.Fprintf(os.Stderr, "NodePool max count difference : %d k for [%d] - [%d]. Mean : %d k\n", (max-min)/1000, indexmax, indexmin, data.ClosedSetComplexity/(1000*len(data.SeenNodes)))
 	switch {
 	case data.Win == true:
 		fmt.Fprintln(os.Stderr, "Found a solution")
-		min, max, indexmin, indexmax := 1<<31, 0, -1, -1
-		for index, value := range data.SeenNodes {
-			currLen := len(value)
-			data.ClosedSetComplexity += currLen
-			if currLen > max {
-				max = currLen
-				indexmax = index
-			}
-			if currLen < min {
-				min = currLen
-				indexmin = index
-			}
-		}
-		fmt.Fprintf(os.Stderr, "NodePool max count difference : %d k for [%d] - [%d]. Mean : %d k\n", (max-min)/1000, indexmax, indexmin, data.ClosedSetComplexity/(1000*len(data.SeenNodes)))
 	case data.RamFailure == true:
 		fmt.Fprintln(os.Stderr, "RAM Failure")
 	}
@@ -158,8 +160,10 @@ func algo(param AlgoParameters, data *safeData, workerIndex int) {
 			}
 		}
 		if tries%1000 == 0 {
-			availableRAM, err := getAvailableRAM()
-			if availableRAM>>20 < MinRAMAvailableMB || err != nil {
+			availableRAM, err := GetAvailableRAM()
+			if err != nil ||
+				availableRAM>>20 < MinRAMAvailableMB ||
+				availableRAM < data.RAMMin {
 				fmt.Fprintf(os.Stderr, "[%d] - Not enough RAM[%v MB] to continue or Fatal (error reading RAM status)\n", workerIndex, availableRAM>>20)
 				data.Mu.Lock()
 				data.RamFailure = true
@@ -178,7 +182,7 @@ func terminateSearch(data *safeData, solutionPath []byte, score int) {
 	data.WinScore = score
 }
 
-func getAvailableRAM() (uint64, error) {
+func GetAvailableRAM() (uint64, error) {
 	v, err := mem.VirtualMemory()
 	if err != nil {
 		return 0, fmt.Errorf("Error while getting info about memory: %v", err)

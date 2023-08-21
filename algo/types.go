@@ -43,6 +43,7 @@ type Option struct {
 	Debug            bool
 	DisableUI        bool
 	StringInput      string
+	RAMMaxGB           uint64
 }
 
 type Result struct {
@@ -50,7 +51,7 @@ type Result struct {
 	ClosedSetComplexity int
 	Tries               int
 	RamFailure          bool
-	Algo				string
+	Algo                string
 }
 
 type idaData struct {
@@ -82,6 +83,7 @@ type safeData struct {
 	WinScore            int
 	Idle                int
 	ClosedSetComplexity int
+	RAMMin              uint64
 }
 
 type AlgoParameters struct {
@@ -90,4 +92,5 @@ type AlgoParameters struct {
 	Eval           Eval
 	Board          [][]int
 	Unsolvable     bool
+	RAMMaxGB         uint64
 }

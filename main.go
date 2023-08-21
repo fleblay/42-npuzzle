@@ -7,7 +7,7 @@ import (
 	"github.com/fleblay/42-npuzzle/controller"
 	"github.com/fleblay/42-npuzzle/database"
 	"github.com/gin-gonic/gin"
-	cors "github.com/rs/cors/wrapper/gin"
+	//cors "github.com/rs/cors/wrapper/gin"
 	"os"
 	"os/signal"
 	"syscall"
@@ -44,6 +44,7 @@ func parseFlags(opt *algo.Option) {
 	flagSet.BoolVar(&opt.NoIterativeDepth, "no-i", false, "usage : -no-i. Use A* instead of Iterative Depth A* (aka IDA*). WAY faster but increase A LOT memory consumption")
 	flagSet.BoolVar(&opt.Debug, "d", false, "usage : -d. Activate debug info")
 	flagSet.BoolVar(&opt.DisableUI, "no-ui", false, "usage : -no-ui. Disable pretty display of solution")
+	flagSet.Uint64Var(&opt.RAMMaxGB, "ram", 8, "usage : -ram [MaxRamGb] between 1 and 16")
 
 	flagSet.Parse(os.Args[1:])
 }
@@ -63,7 +64,8 @@ func main() {
 
 		gin.SetMode(gin.ReleaseMode)
 		router := gin.Default()
-		router.Use(cors.Default())
+		//Should ONLY be used for testing in dev env
+		//router.Use(cors.Default())
 
 		router.POST("/solve/default", repo.Solve)
 		router.POST("/solve/ida", repoIDA.Solve)
@@ -77,12 +79,14 @@ func main() {
 			fmt.Printf("Starting server on '%s'\n", listen)
 			err = router.Run(listen)
 		} else {
-			fmt.Println("Starting server with default value '0.0.0.0:8081'")
-			err = router.Run("0.0.0.0:8081")
+			fmt.Println("Starting server with default value 'localhost:8081'")
+			err = router.Run("localhost:8081")
 		}
 		handleFatalError(err)
 	} else {
 		opt := &algo.Option{}
+		var err error
+		handleFatalError(err)
 		parseFlags(opt)
 		res, _ := algo.Solve(opt)
 		fmt.Println(res)

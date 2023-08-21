@@ -60,6 +60,7 @@ func (repo *Repository) Solve(c *gin.Context) {
 	result, solution = algo.Solve(opt)
 	if result[0] == "RAM" && opt.NoIterativeDepth == true && repo.Algo == "default" {
 		fmt.Fprintln(os.Stderr, "Solver killed because of RAM, trying again with IDA*")
+		repo.Algo = "fallback_IDA"
 		opt.NoIterativeDepth = false
 		fallback = true
 		result, solution = algo.Solve(opt)
