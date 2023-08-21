@@ -64,11 +64,12 @@ func (repo *Repository) Solve(c *gin.Context) {
 		opt.NoIterativeDepth = false
 		fallback = true
 		result, solution = algo.Solve(opt)
-	}
-	if result[0] == "OK" {
+	} else if result[0] == "OK" {
 		if err := solution.UpdateOrCreateSolution(repo.DB); err != nil {
 			fmt.Fprintln(os.Stderr, "Failure to save new solution to DB")
 		}
+	} else if result[0] == "PARAM" || result[0] == "FLAGS"{
+			fmt.Fprintln(os.Stderr, "Wrong parameters or flags for solver init")
 	}
 	c.IndentedJSON(http.StatusOK, gin.H{
 		"status": result[0],
