@@ -36,7 +36,7 @@ func initData(param AlgoParameters) (data safeData) {
 		data.RAMMin = currentAvailableRAM - (param.RAMMaxGB << 30)
 		fmt.Fprintln(os.Stderr, "RAM Min left for system is now :", data.RAMMin>>20, "MB")
 	} else {
-		fmt.Fprintf(os.Stderr, "Max Ram Usage specified (%d Mb) is superior to current available RAM (%d Mb). Ram failure will be triggered by fallback value (%d Mb)\n", data.RAMMin<<10, currentAvailableRAM>>20, MinRAMAvailableMB)
+		fmt.Fprintf(os.Stderr, "Max Ram Usage specified (%d Mb) is superior to current available RAM (%d Mb). Ram failure will be triggered by fallback value (%d Mb)\n", param.RAMMaxGB<<10, currentAvailableRAM>>20, MinRAMAvailableMB)
 		data.RAMMin = 0
 	}
 	return
