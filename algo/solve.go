@@ -20,7 +20,7 @@ func InitOptionForApiUse(opt *Option, algo string) {
 	}
 	opt.Workers = 8
 	opt.SeenNodesSplit = 96
-	opt.RAMMaxGB = 7
+	opt.RAMMaxGB = 8
 	//To be changed in prod
 	opt.Debug = true
 }
