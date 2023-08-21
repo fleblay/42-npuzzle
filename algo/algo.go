@@ -32,7 +32,13 @@ func initData(param AlgoParameters) (data safeData) {
 	data.MaxSizeQueue = make([]int, param.Workers)
 	data.Idle = 0
 	currentAvailableRAM, _ := GetAvailableRAM()
-	data.RAMMin = currentAvailableRAM - (param.RAMMaxGB << 30)
+	if (param.RAMMaxGB << 30) < currentAvailableRAM {
+		data.RAMMin = currentAvailableRAM - (param.RAMMaxGB << 30)
+		fmt.Fprintln(os.Stderr, "RAM Min left for system is now :", data.RAMMin >> 20, "MB")
+	} else {
+		fmt.Fprintln(os.Stderr, "Max Ram Usage specified is superior to current available RAM. Setting RAM Min to 0. Default value will prevail")
+		data.RAMMin = 0
+	}
 	return
 }
 
