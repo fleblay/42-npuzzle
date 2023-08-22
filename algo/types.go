@@ -18,9 +18,9 @@ type Pos2D struct {
 
 type Node struct {
 	//world [][]int
-	world uint64
-	path  []byte
-	score int
+	world uint64 // max size is now 4
+	path  []byte // could be replaced with [5]uint64 (80moves of 2bit) + uint8 for len of path
+	score uint16
 }
 
 //TODO fx to change for 3x3 or 4x4
@@ -110,7 +110,7 @@ type safeData struct {
 	Over                bool
 	Win                 bool
 	RamFailure          bool
-	WinScore            int
+	WinScore            uint16
 	Idle                int
 	ClosedSetComplexity int
 	RAMMin              uint64

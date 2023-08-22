@@ -184,7 +184,7 @@ func algo(param AlgoParameters, data *safeData, workerIndex int) {
 	}
 }
 
-func terminateSearch(data *safeData, solutionPath []byte, score int) {
+func terminateSearch(data *safeData, solutionPath []byte, score uint16) {
 	data.Path = solutionPath
 	data.Over = true
 	data.Win = true
@@ -214,7 +214,7 @@ func getNextMoves(startPos, goalPos [][]int, scoreFx EvalFx, path []byte, curren
 		}
 		score := scoreFx(nextPos, startPos, goalPos, path)
 		nextPath := DeepSliceCopyAndAdd(path, dir.name)
-		nextNode := Node{world: BoardToUint64(nextPos), path: nextPath, score: score}
+		nextNode := Node{world: BoardToUint64(nextPos), path: nextPath, score: uint16(score)}
 		keyNode, queueIndex, seenNodeIndex := MatrixToStringSelector(nextPos, workers, seenNodesSplit)
 		data.MuSeen[seenNodeIndex].Lock()
 		seenNodesScore, alreadyExplored := data.SeenNodes[seenNodeIndex][keyNode]
