@@ -21,7 +21,7 @@ func initData(param AlgoParameters) (data safeData) {
 	for i := 0; i < param.Workers; i++ {
 
 		queue := make(PriorityQueue, 1, 1000)
-		queue[0] = &Item{node: Node{world: startPos, score: 0, path: []byte{}}}
+		queue[0] = &Item{node: Node{world: BoardToUint64(startPos), score: 0, path: []byte{}}}
 		data.PosQueue[i] = &queue
 		heap.Init(data.PosQueue[i])
 	}
@@ -126,6 +126,7 @@ func algo(param AlgoParameters, data *safeData, workerIndex int) {
 			return
 		}
 		if isIdle && lenqueue > 0 {
+			fmt.Fprintf(os.Stderr, "[%2d] - Not idle anymore\n", workerIndex)
 			isIdle = false
 			data.Mu.Lock()
 			data.Idle--
@@ -133,6 +134,7 @@ func algo(param AlgoParameters, data *safeData, workerIndex int) {
 		}
 		if lenqueue == 0 {
 			if !isIdle {
+				fmt.Fprintf(os.Stderr, "[%2d] - Entering idle state\n", workerIndex)
 				data.Mu.Lock()
 				data.Idle++
 				data.Mu.Unlock()
@@ -152,12 +154,13 @@ func algo(param AlgoParameters, data *safeData, workerIndex int) {
 			return
 		}
 		printInfo(workerIndex, tries, currentNode, startAlgo, lenqueue)
-		if isEqual(goalPos, currentNode.node.world) {
+		if isEqual(goalPos, Uint64ToBoard(currentNode.node.world)) {
 			data.Mu.Lock()
 			if checkOptimalSolution(currentNode, data) {
 				fmt.Fprintf(os.Stderr, "\x1b[32m[%2d] - Found an OPTIMAL solution\n\x1b[0m", workerIndex)
 				terminateSearch(data, currentNode.node.path, currentNode.node.score)
 				data.Mu.Unlock()
+				//time.Sleep(time.Hour)
 				return
 			} else {
 				fmt.Fprintf(os.Stderr, "\x1b[33m[%2d] - Found a solution : Caching result\n\x1b[0m", workerIndex)
@@ -205,13 +208,13 @@ func getNextMoves(startPos, goalPos [][]int, scoreFx EvalFx, path []byte, curren
 				continue
 			}
 		}
-		ok, nextPos := dir.fx(currentNode.node.world)
+		ok, nextPos := dir.fx(Uint64ToBoard(currentNode.node.world))
 		if !ok {
 			continue
 		}
 		score := scoreFx(nextPos, startPos, goalPos, path)
 		nextPath := DeepSliceCopyAndAdd(path, dir.name)
-		nextNode := Node{world: nextPos, path: nextPath, score: score}
+		nextNode := Node{world: BoardToUint64(nextPos), path: nextPath, score: score}
 		keyNode, queueIndex, seenNodeIndex := MatrixToStringSelector(nextPos, workers, seenNodesSplit)
 		data.MuSeen[seenNodeIndex].Lock()
 		seenNodesScore, alreadyExplored := data.SeenNodes[seenNodeIndex][keyNode]

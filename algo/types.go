@@ -17,9 +17,34 @@ type Pos2D struct {
 }
 
 type Node struct {
-	world [][]int
+	//world [][]int
+	world uint64
 	path  []byte
 	score int
+}
+
+func BoardToUint64(board [][]int) (res uint64) {
+	for i := 0; i < 4; i++ {
+		for j := 0; j < 4; j++ {
+			res |= uint64(board[i][j])
+			if i != 3 || j != 3 {
+				res <<= 4
+			}
+		}
+	}
+	return
+}
+
+func Uint64ToBoard(flat uint64) (board [][]int) {
+	board = make([][]int, 4)
+	for i := 3; i >= 0; i-- {
+		board[i] = make([]int, 4)
+		for j := 3; j >= 0; j-- {
+			board[i][j] = int(flat & 15)
+			flat >>= 4
+		}
+	}
+	return
 }
 
 type moveFx func([][]int) (bool, [][]int)
@@ -43,7 +68,7 @@ type Option struct {
 	Debug            bool
 	DisableUI        bool
 	StringInput      string
-	RAMMaxGB           uint64
+	RAMMaxGB         uint64
 }
 
 type Result struct {
@@ -92,5 +117,5 @@ type AlgoParameters struct {
 	Eval           Eval
 	Board          [][]int
 	Unsolvable     bool
-	RAMMaxGB         uint64
+	RAMMaxGB       uint64
 }

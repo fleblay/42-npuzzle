@@ -3,11 +3,16 @@ package main
 import (
 	"flag"
 	"fmt"
+	"sync"
+
 	"github.com/fleblay/42-npuzzle/algo"
 	"github.com/fleblay/42-npuzzle/controller"
 	"github.com/fleblay/42-npuzzle/database"
 	"github.com/gin-gonic/gin"
+
 	//cors "github.com/rs/cors/wrapper/gin"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"syscall"
@@ -58,9 +63,9 @@ func main() {
 		count, err := database.CreateModel(db)
 		fmt.Printf("Successfully connected to DB with %d items\n", count)
 		handleFatalError(err)
-		repoASTAR := controller.Repository{DB: db, Algo : "A*"}
-		repoIDA := controller.Repository{DB: db, Algo : "IDA"}
-		repo := controller.Repository{DB: db, Algo : "default"}
+		repoASTAR := controller.Repository{DB: db, Algo: "A*"}
+		repoIDA := controller.Repository{DB: db, Algo: "IDA"}
+		repo := controller.Repository{DB: db, Algo: "default"}
 
 		gin.SetMode(gin.ReleaseMode)
 		router := gin.Default()
@@ -84,11 +89,31 @@ func main() {
 		}
 		handleFatalError(err)
 	} else {
+		/*
+		var board [][]int = make([][]int, 4)
+		for i := 0; i < 4; i++ {
+			board[i] = make([]int, 4)
+			for j := 0; j < 4; j++ {
+				board[i][j] = i *4 + j
+			}
+		}
+		flat := algo.BoardToUint64(board)
+		fmt.Println(board)
+		fmt.Println(flat)
+		fmt.Println(algo.Uint64ToBoard(flat))
+		os.Exit(0)
+		*/
+		var wg sync.WaitGroup
+		go func() {
+			fmt.Println(http.ListenAndServe("localhost:6060", nil))
+		}()
+		wg.Add(1)
 		opt := &algo.Option{}
 		var err error
 		handleFatalError(err)
 		parseFlags(opt)
 		res, _ := algo.Solve(opt)
 		fmt.Println(res)
+		wg.Wait()
 	}
 }

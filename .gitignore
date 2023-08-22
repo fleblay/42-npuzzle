@@ -7,3 +7,6 @@ npuzzle
 
 #test files
 *.txt
+
+#pprof png files
+*.png

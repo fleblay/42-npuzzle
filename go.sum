@@ -90,10 +90,6 @@ github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec/go.mod h1:qq
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
 github.com/rivo/uniseg v0.4.4 h1:8TfxU8dW6PdqD27gjM8MVNuicgxIjxpm4K7x4jp8sis=
 github.com/rivo/uniseg v0.4.4/go.mod h1:FN3SvrM+Zdj16jyLfmOkMNblXMcoc8DfTHruCPUcx88=
-github.com/rs/cors v1.8.1 h1:OrP+y5H+5Md29ACTA9imbALaKHwOSUZkcizaG0LT5ow=
-github.com/rs/cors v1.8.1/go.mod h1:XyqrcTp5zjWr1wsJ8PIRZssZ8b/WMcMf71DJnit4EMU=
-github.com/rs/cors/wrapper/gin v0.0.0-20230526135330-e90f16747950 h1:AqLt1PEuscqbMJkmkfOw1xLlDH0VIQzrDEuOGggv0a4=
-github.com/rs/cors/wrapper/gin v0.0.0-20230526135330-e90f16747950/go.mod h1:gmu40DuK3SLdKUzGOUofS3UDZwyeOUy6ZjPPuaALatw=
 github.com/shirou/gopsutil/v3 v3.23.6 h1:5y46WPI9QBKBbK7EEccUPNXpJpNrvPuTD0O2zHEHT08=
 github.com/shirou/gopsutil/v3 v3.23.6/go.mod h1:j7QX50DrXYggrpN30W0Mo+I4/8U2UUIQrnrhqUeWrAU=
 github.com/shoenig/go-m1cpu v0.1.6/go.mod h1:1JJMcUBvfNwpq05QDQVAnx3gUHr9IYF7GNg9SUEw2VQ=
