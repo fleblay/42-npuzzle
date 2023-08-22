@@ -101,12 +101,41 @@ func MatrixToStringHashOnly(matrix [][]int, separator string) string {
 	return results
 }
 
+/*
 func MatrixToStringSelector(matrix [][]int, worker int, seenNodeMap int) (key string, queueIndex int, seenNodeIndex int) {
 	if len(matrix) < 10 {
 		return matrixToStringOptimal(matrix, worker, seenNodeMap)
 	} else {
 		return MatrixToStringNoOpti(matrix, worker, seenNodeMap)
 	}
+}
+*/
+
+func MatrixToStringSelector(matrix [][]int, worker int, seenNodeMap int) (key uint64, queueIndex int, seenNodeIndex int) {
+		return matrixToUint64(matrix, worker, seenNodeMap)
+}
+
+//TODO fx to change for 3x3 or 4x4
+func matrixToUint64(matrix [][]int, worker int, seenNodeMap int) (key uint64, queueIndex int, seenNodeIndex int) {
+
+	size := len(matrix)
+
+	spot := 0
+	for i := 0; i < size; i++ {
+
+		for j := 0; j < size; j++ {
+			queueIndex += matrix[i][j] * (i + 0) * (j + 0)
+			seenNodeIndex += matrix[i][j] * (i + 0) * (j + 0)
+			spot += 3
+			key |= uint64(matrix[i][j])
+			if i != 3 || j != 3 {
+				key <<= 4
+			}
+		}
+	}
+	queueIndex %= worker
+	seenNodeIndex %= seenNodeMap
+	return key, queueIndex, seenNodeIndex
 }
 
 func matrixToStringOptimal(matrix [][]int, worker int, seenNodeMap int) (key string, queueIndex int, seenNodeIndex int) {

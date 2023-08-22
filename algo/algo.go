@@ -11,10 +11,10 @@ import (
 
 func initData(param AlgoParameters) (data safeData) {
 	startPos := param.Board
-	data.SeenNodes = make([]map[string]int, param.SeenNodesSplit)
+	data.SeenNodes = make([]map[uint64]int, param.SeenNodesSplit)
 	keyNode, _, _ := MatrixToStringSelector(startPos, param.Workers, param.SeenNodesSplit)
 	for i := 0; i < param.SeenNodesSplit; i++ {
-		data.SeenNodes[i] = make(map[string]int, 1000)
+		data.SeenNodes[i] = make(map[uint64]int, 1000)
 		data.SeenNodes[i][keyNode] = 0
 	}
 	data.PosQueue = make([]*PriorityQueue, param.Workers)

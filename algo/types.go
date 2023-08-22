@@ -23,6 +23,8 @@ type Node struct {
 	score int
 }
 
+//TODO fx to change for 3x3 or 4x4
+
 func BoardToUint64(board [][]int) (res uint64) {
 	for i := 0; i < 4; i++ {
 		for j := 0; j < 4; j++ {
@@ -35,6 +37,7 @@ func BoardToUint64(board [][]int) (res uint64) {
 	return
 }
 
+//TODO fx to change for 3x3 or 4x4
 func Uint64ToBoard(flat uint64) (board [][]int) {
 	board = make([][]int, 4)
 	for i := 3; i >= 0; i-- {
@@ -84,7 +87,8 @@ type idaData struct {
 	MaxScore            int
 	Path                []byte
 	States              [][][]int
-	Hashes              []string
+	//Hashes              []string
+	Hashes              []uint64
 	Goal                [][]int
 	ClosedSetComplexity int
 	Tries               int
@@ -96,7 +100,8 @@ type safeData struct {
 	PosQueue []*PriorityQueue
 
 	MuSeen       []sync.Mutex
-	SeenNodes    []map[string]int
+	//SeenNodes    []map[string]int
+	SeenNodes    []map[uint64]int
 	Tries        int
 	MaxSizeQueue []int
 

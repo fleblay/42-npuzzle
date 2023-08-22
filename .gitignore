@@ -10,3 +10,6 @@ npuzzle
 
 #pprof png files
 *.png
+
+#Macos
+.DS_Store
