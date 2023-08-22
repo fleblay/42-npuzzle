@@ -126,7 +126,6 @@ func algo(param AlgoParameters, data *safeData, workerIndex int) {
 			return
 		}
 		if isIdle && lenqueue > 0 {
-			fmt.Fprintf(os.Stderr, "[%2d] - Not idle anymore\n", workerIndex)
 			isIdle = false
 			data.Mu.Lock()
 			data.Idle--
@@ -134,7 +133,6 @@ func algo(param AlgoParameters, data *safeData, workerIndex int) {
 		}
 		if lenqueue == 0 {
 			if !isIdle {
-				fmt.Fprintf(os.Stderr, "[%2d] - Entering idle state\n", workerIndex)
 				data.Mu.Lock()
 				data.Idle++
 				data.Mu.Unlock()
@@ -160,7 +158,6 @@ func algo(param AlgoParameters, data *safeData, workerIndex int) {
 				fmt.Fprintf(os.Stderr, "\x1b[32m[%2d] - Found an OPTIMAL solution\n\x1b[0m", workerIndex)
 				terminateSearch(data, currentNode.node.path, currentNode.node.score)
 				data.Mu.Unlock()
-				//time.Sleep(time.Hour)
 				return
 			} else {
 				fmt.Fprintf(os.Stderr, "\x1b[33m[%2d] - Found a solution : Caching result\n\x1b[0m", workerIndex)
@@ -168,7 +165,7 @@ func algo(param AlgoParameters, data *safeData, workerIndex int) {
 				data.Mu.Unlock()
 			}
 		}
-		if tries%1000 == 0 {
+		if tries%100000 == 0 {
 			availableRAM, err := GetAvailableRAM()
 			if err != nil ||
 				availableRAM>>20 < MinRAMAvailableMB ||
