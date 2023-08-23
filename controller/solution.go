@@ -2,6 +2,7 @@ package controller
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -21,8 +22,27 @@ type SolveRequest struct {
 }
 
 type Repository struct {
-	DB *gorm.DB
+	DB   *gorm.DB
 	Algo string
+	Jobs *[]string
+}
+
+func (repo *Repository) addStringInputToJobs(input string) (err error) {
+	if index := algo.Index(*repo.Jobs, input); index != -1 {
+		return errors.New("Grid already beeing processed")
+	} else {
+		*repo.Jobs = append(*repo.Jobs, input)
+		return nil
+	}
+}
+
+func (repo *Repository) removeStringInputFromJobs(input string) (err error) {
+	if index := algo.Index(*repo.Jobs, input); index == -1 {
+		return errors.New("Grid already removed from jobs")
+	} else {
+		*repo.Jobs = append((*repo.Jobs)[:index], ((*repo.Jobs)[index+1:])...)
+		return nil
+	}
 }
 
 func GetSolutionByStringInput(solution *models.Solution, db *gorm.DB, stringInput string) error {
@@ -49,7 +69,10 @@ func (repo *Repository) Solve(c *gin.Context) {
 	}
 	fmt.Fprintln(os.Stderr, "Received request :", newRequest)
 	opt.StringInput = strconv.Itoa(newRequest.Size) + " " + newRequest.Board
-
+	if err := repo.addStringInputToJobs(opt.StringInput); err != nil {
+		fmt.Fprintln(os.Stderr, "Grid already being processed !")
+		c.IndentedJSON(http.StatusOK, gin.H{"status": "RUNNING"})
+	}
 	if err := GetSolutionByStringInput(solution, repo.DB, opt.StringInput); err == nil {
 		fmt.Fprintln(os.Stderr, "Found entry in DB !")
 		c.IndentedJSON(http.StatusOK, gin.H{"status": "DB", "solution": solution.Path})
@@ -68,17 +91,20 @@ func (repo *Repository) Solve(c *gin.Context) {
 		if err := solution.UpdateOrCreateSolution(repo.DB); err != nil {
 			fmt.Fprintln(os.Stderr, "Failure to save new solution to DB")
 		}
-	} else if result[0] == "PARAM" || result[0] == "FLAGS"{
-			fmt.Fprintln(os.Stderr, "Wrong parameters or flags for solver init")
+	} else if result[0] == "PARAM" || result[0] == "FLAGS" {
+		fmt.Fprintln(os.Stderr, "Wrong parameters or flags for solver init")
 	}
 	c.IndentedJSON(http.StatusOK, gin.H{
-		"status": result[0],
+		"status":   result[0],
 		"solution": result[1],
-		"time": result[2],
-		"algo" : repo.Algo,
-		"fallback" : fallback,
-		"workers" : opt.Workers,
+		"time":     result[2],
+		"algo":     repo.Algo,
+		"fallback": fallback,
+		"workers":  opt.Workers,
 	})
+	if err := repo.removeStringInputFromJobs(opt.StringInput); err != nil {
+		fmt.Fprintln(os.Stderr, "Failure removing grid from running jobs")
+	}
 	debug.FreeOSMemory()
 }
 
@@ -109,7 +135,7 @@ func (repo *Repository) GetRandomFromDB(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, gin.H{"size": solution.Size, "board": strings.Join(strings.Split(solution.Hash, "."), " ")})
 }
 
-//TODO : Change Solve route in order to use this code for DRY purpose
+// TODO : Change Solve route in order to use this code for DRY purpose
 func (repo *Repository) GetSolution(c *gin.Context) {
 	solution := &models.Solution{}
 	var newRequest SolveRequest
@@ -123,6 +149,6 @@ func (repo *Repository) GetSolution(c *gin.Context) {
 		c.IndentedJSON(http.StatusOK, gin.H{"status": "DB", "solution": solution.Path})
 		return
 	} else {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"status" : "NOTFOUND"})
+		c.IndentedJSON(http.StatusNotFound, gin.H{"status": "NOTFOUND"})
 	}
 }

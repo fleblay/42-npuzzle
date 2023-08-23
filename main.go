@@ -63,9 +63,10 @@ func main() {
 		count, err := database.CreateModel(db)
 		fmt.Printf("Successfully connected to DB with %d items\n", count)
 		handleFatalError(err)
-		repoASTAR := controller.Repository{DB: db, Algo: "A*"}
-		repoIDA := controller.Repository{DB: db, Algo: "IDA"}
-		repo := controller.Repository{DB: db, Algo: "default"}
+		jobs := []string{}
+		repoASTAR := controller.Repository{DB: db, Algo: "A*", Jobs: &jobs}
+		repoIDA := controller.Repository{DB: db, Algo: "IDA", Jobs: &jobs}
+		repo := controller.Repository{DB: db, Algo: "default", Jobs: &jobs}
 
 		gin.SetMode(gin.ReleaseMode)
 		router := gin.Default()
