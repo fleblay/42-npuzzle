@@ -20,4 +20,4 @@ var Directions = []struct {
 	{'R', moveRight},
 }
 
-var MinRAMAvailableMB uint64 = 512
+var MinRAMAvailableMB uint64 = 256

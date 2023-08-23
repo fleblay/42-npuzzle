@@ -21,7 +21,7 @@ func InitOptionForApiUse(opt *Option, algo string) {
 	}
 	opt.Workers = 8
 	opt.SeenNodesSplit = 96
-	opt.RAMMaxGB = 8
+	opt.RAMMaxGB = 6
 	//To be changed in prod
 	opt.Debug = true
 }
@@ -92,10 +92,13 @@ func setParam(opt *Option, param *AlgoParameters) (err error) {
 		return errors.New("Board is not solvable")
 	}
 	param.RAMMaxGB = opt.RAMMaxGB
-	debug.SetMemoryLimit(int64(opt.RAMMaxGB << 29))
-	debug.SetGCPercent(-1)
-	if opt.NoIterativeDepth {
-		fmt.Fprintf(os.Stderr, "Solver will use a soft maxmimum of %d MB and a hard maximum of %d Gb of RAM\n", opt.RAMMaxGB << 9, opt.RAMMaxGB)
+	if opt.RAMMaxGB > 2 && opt.NoIterativeDepth {
+		fmt.Fprintf(os.Stderr, "Solver will use a soft maxmimum of %d Gb and a hard maximum of %d Gb of RAM\n", param.RAMMaxGB-2, param.RAMMaxGB)
+		debug.SetMemoryLimit(int64((opt.RAMMaxGB - 2) << 30))
+		debug.SetGCPercent(-1)
+	} else {
+		debug.SetMemoryLimit(int64(opt.RAMMaxGB << 30))
+		debug.SetGCPercent(200)
 	}
 	return err
 }
