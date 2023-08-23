@@ -16,20 +16,19 @@ type Pos2D struct {
 	Y int
 }
 
+// path could be replaced with [5]uint64 (80moves of 2bit) + uint8 for len of path
 type Node struct {
-	//world [][]int
-	world uint64 // max size is now 4
-	path  []byte // could be replaced with [5]uint64 (80moves of 2bit) + uint8 for len of path
+	world uint64
+	path  []byte
 	score uint16
 }
 
-//TODO fx to change for 3x3 or 4x4
-
 func BoardToUint64(board [][]int) (res uint64) {
-	for i := 0; i < 4; i++ {
-		for j := 0; j < 4; j++ {
+	size := len(board)
+	for i := 0; i < size; i++ {
+		for j := 0; j < size; j++ {
 			res |= uint64(board[i][j])
-			if i != 3 || j != 3 {
+			if i != size-1 || j != size-1 {
 				res <<= 4
 			}
 		}
@@ -37,12 +36,11 @@ func BoardToUint64(board [][]int) (res uint64) {
 	return
 }
 
-//TODO fx to change for 3x3 or 4x4
-func Uint64ToBoard(flat uint64) (board [][]int) {
-	board = make([][]int, 4)
-	for i := 3; i >= 0; i-- {
-		board[i] = make([]int, 4)
-		for j := 3; j >= 0; j-- {
+func Uint64ToBoard(flat uint64, size int) (board [][]int) {
+	board = make([][]int, size)
+	for i := size -1 ; i >= 0; i-- {
+		board[i] = make([]int, size)
+		for j := size -1; j >= 0; j-- {
 			board[i][j] = int(flat & 15)
 			flat >>= 4
 		}
@@ -83,10 +81,10 @@ type Result struct {
 }
 
 type idaData struct {
-	Fx                  EvalFx
-	MaxScore            int
-	Path                []byte
-	States              [][][]int
+	Fx       EvalFx
+	MaxScore int
+	Path     []byte
+	States   [][][]int
 	//Hashes              []string
 	Hashes              []uint64
 	Goal                [][]int
@@ -99,7 +97,7 @@ type safeData struct {
 	MuQueue  []sync.Mutex
 	PosQueue []*PriorityQueue
 
-	MuSeen       []sync.Mutex
+	MuSeen []sync.Mutex
 	//SeenNodes    []map[string]int
 	SeenNodes    []map[uint64]int
 	Tries        int

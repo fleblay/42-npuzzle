@@ -152,7 +152,7 @@ func algo(param AlgoParameters, data *safeData, workerIndex int) {
 			return
 		}
 		printInfo(workerIndex, tries, currentNode, startAlgo, lenqueue)
-		if isEqual(goalPos, Uint64ToBoard(currentNode.node.world)) {
+		if isEqual(goalPos, Uint64ToBoard(currentNode.node.world, len(param.Board))) {
 			data.Mu.Lock()
 			if checkOptimalSolution(currentNode, data) {
 				fmt.Fprintf(os.Stderr, "\x1b[32m[%2d] - Found an OPTIMAL solution\n\x1b[0m", workerIndex)
@@ -219,7 +219,7 @@ func getNextMoves(startPos, goalPos [][]int, scoreFx EvalFx, path []byte, curren
 				continue
 			}
 		}
-		ok, nextPos := dir.fx(Uint64ToBoard(currentNode.node.world))
+		ok, nextPos := dir.fx(Uint64ToBoard(currentNode.node.world, len(goalPos)))
 		if !ok {
 			continue
 		}
@@ -239,7 +239,6 @@ func getNextMoves(startPos, goalPos [][]int, scoreFx EvalFx, path []byte, curren
 
 func refreshData(data *safeData, workerIndex int) (over bool, tries, lenqueue int, idle int, ramFailure bool) {
 	data.Mu.Lock()
-
 	data.Tries++
 	tries = data.Tries
 	over = data.Over

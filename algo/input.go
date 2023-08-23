@@ -84,8 +84,8 @@ func extractSize(inputArray []int) (size int, err error) {
 		return -1, errors.New("Error parsing input : wrong grid size")
 	}
 	size = inputArray[0]
-	if size < 3 {
-		return -1, errors.New("Error parsing input : grid size is below 3")
+	if size < 3 || size > 4{
+		return -1, errors.New("Error parsing input : grid size is below 3 or superior to 4")
 	}
 	if size*size > len(inputArray)-1 {
 		return -1, errors.New("Error parsing input : missing numbers in grid")

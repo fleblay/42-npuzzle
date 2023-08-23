@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
@@ -15,7 +16,7 @@ import (
 func InitOptionForApiUse(opt *Option, algo string) {
 	opt.DisableUI = true
 	opt.Heuristic = "astar_manhattan_conflict"
-	if (algo == "A*" || algo == "default") {
+	if algo == "A*" || algo == "default" {
 		opt.NoIterativeDepth = true
 	}
 	opt.Workers = 8
@@ -25,7 +26,6 @@ func InitOptionForApiUse(opt *Option, algo string) {
 	opt.Debug = true
 }
 
-
 func areFlagsOk(opt *Option) (err error) {
 	if opt.Workers < 1 || opt.Workers > 32 {
 		return errors.New("Invalid number of workers")
@@ -33,10 +33,10 @@ func areFlagsOk(opt *Option) (err error) {
 	if opt.SeenNodesSplit < 1 || opt.SeenNodesSplit > 96 {
 		return errors.New("Invalid number of splits")
 	}
-	if opt.Filename == "" && opt.StringInput == "" && (opt.MapSize < 3) {
+	if opt.Filename == "" && opt.StringInput == "" && (opt.MapSize < 3 || opt.MapSize > 4) {
 		return errors.New("Invalid map size")
 	}
-	if opt.RAMMaxGB < 1 || opt.RAMMaxGB > 32 {
+	if opt.RAMMaxGB < 1 || opt.RAMMaxGB > 64 {
 		return errors.New("Invalid Max Ram GB (must be between 1 and 32GB")
 	}
 	for _, current := range Evals {
@@ -86,11 +86,17 @@ func setParam(opt *Option, param *AlgoParameters) (err error) {
 	if err != nil {
 		return err
 	}
-	if ok, _ := IsSolvable(param.Board) ; !ok {
+	if ok, _ := IsSolvable(param.Board); !ok {
 		fmt.Fprintln(os.Stderr, "Board is not solvable")
 		param.Unsolvable = true
+		return errors.New("Board is not solvable")
 	}
 	param.RAMMaxGB = opt.RAMMaxGB
+	debug.SetMemoryLimit(int64(opt.RAMMaxGB << 29))
+	debug.SetGCPercent(-1)
+	if opt.NoIterativeDepth {
+		fmt.Fprintf(os.Stderr, "Solver will use a soft maxmimum of %d MB and a hard maximum of %d Gb of RAM\n", opt.RAMMaxGB << 9, opt.RAMMaxGB)
+	}
 	return err
 }
 
@@ -149,4 +155,3 @@ func Solve(opt *Option) (result [3]string, solution *models.Solution) {
 	}
 	return [3]string{"END"}, nil
 }
-

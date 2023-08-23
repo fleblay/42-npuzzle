@@ -89,28 +89,12 @@ func main() {
 		}
 		handleFatalError(err)
 	} else {
-		/*
-		var board [][]int = make([][]int, 4)
-		for i := 0; i < 4; i++ {
-			board[i] = make([]int, 4)
-			for j := 0; j < 4; j++ {
-				board[i][j] = i *4 + j
-			}
-		}
-		flat := algo.BoardToUint64(board)
-		fmt.Println(board)
-		fmt.Println(flat)
-		fmt.Println(algo.Uint64ToBoard(flat))
-		os.Exit(0)
-		*/
 		var wg sync.WaitGroup
 		go func() {
 			fmt.Println(http.ListenAndServe("localhost:6060", nil))
 		}()
 		wg.Add(1)
 		opt := &algo.Option{}
-		var err error
-		handleFatalError(err)
 		parseFlags(opt)
 		res, _ := algo.Solve(opt)
 		fmt.Println(res)
