@@ -92,9 +92,9 @@ func setParam(opt *Option, param *AlgoParameters) (err error) {
 		return errors.New("Board is not solvable")
 	}
 	param.RAMMaxGB = opt.RAMMaxGB
-	if opt.RAMMaxGB > 2 && opt.NoIterativeDepth {
-		fmt.Fprintf(os.Stderr, "Solver will use a soft maxmimum of %d Gb and a hard maximum of %d Gb of RAM\n", param.RAMMaxGB-2, param.RAMMaxGB)
-		debug.SetMemoryLimit(int64((opt.RAMMaxGB - 2) << 30))
+	if opt.RAMMaxGB > 1 && opt.NoIterativeDepth {
+		fmt.Fprintf(os.Stderr, "Solver will use a soft maxmimum of %d Gb and a hard maximum of %d Gb of RAM\n", param.RAMMaxGB-1, param.RAMMaxGB)
+		debug.SetMemoryLimit(int64((opt.RAMMaxGB - 1) << 30))
 		debug.SetGCPercent(-1)
 	} else {
 		debug.SetMemoryLimit(int64(opt.RAMMaxGB << 30))
