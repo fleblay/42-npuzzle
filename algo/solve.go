@@ -97,6 +97,7 @@ func setParam(opt *Option, param *AlgoParameters) (err error) {
 		debug.SetMemoryLimit(int64((opt.RAMMaxGB - 2) << 30))
 		debug.SetGCPercent(-1)
 	} else {
+		fmt.Fprintf(os.Stderr, "Solver will use a soft maxmimum of %d Gb. RAM failure will be triggered if available RAM drops below %d Mb", param.RAMMaxGB, MinRAMAvailableMB)
 		debug.SetMemoryLimit(int64(opt.RAMMaxGB << 30))
 		debug.SetGCPercent(200)
 	}
