@@ -197,6 +197,20 @@ func GetAvailableRAM() (uint64, error) {
 	return availableRAM, nil
 }
 
+func addNodeToQueue(nextNode Node, queueIndex int, seenNodeIndex int, score int, keyNode uint64, data *safeData) {
+	item := &Item{node: nextNode}
+	data.MuQueue[queueIndex].Lock()
+	heap.Push(data.PosQueue[queueIndex], item)
+	data.MuQueue[queueIndex].Unlock()
+	data.MuSeen[seenNodeIndex].Lock()
+	data.SeenNodes[seenNodeIndex][keyNode] = score
+	data.MuSeen[seenNodeIndex].Unlock()
+}
+
+func createNextNode(nextPos [][]int, nextPath []byte, score int) Node {
+	return Node{world: BoardToUint64(nextPos), path: nextPath, score: uint16(score)}
+}
+
 func getNextMoves(startPos, goalPos [][]int, scoreFx EvalFx, path []byte, currentNode *Item, data *safeData, index int, workers int, seenNodesSplit int) {
 	for _, dir := range Directions {
 		if len(path) > 0 {
@@ -211,20 +225,14 @@ func getNextMoves(startPos, goalPos [][]int, scoreFx EvalFx, path []byte, curren
 		}
 		score := scoreFx(nextPos, startPos, goalPos, path)
 		nextPath := DeepSliceCopyAndAdd(path, dir.name)
-		nextNode := Node{world: BoardToUint64(nextPos), path: nextPath, score: uint16(score)}
+		nextNode := createNextNode(nextPos, nextPath, score)
 		keyNode, queueIndex, seenNodeIndex := MatrixToStringSelector(nextPos, workers, seenNodesSplit)
 		data.MuSeen[seenNodeIndex].Lock()
 		seenNodesScore, alreadyExplored := data.SeenNodes[seenNodeIndex][keyNode]
 		data.MuSeen[seenNodeIndex].Unlock()
 		if !alreadyExplored ||
 			score < seenNodesScore {
-			item := &Item{node: nextNode}
-			data.MuQueue[queueIndex].Lock()
-			heap.Push(data.PosQueue[queueIndex], item)
-			data.MuQueue[queueIndex].Unlock()
-			data.MuSeen[seenNodeIndex].Lock()
-			data.SeenNodes[seenNodeIndex][keyNode] = score
-			data.MuSeen[seenNodeIndex].Unlock()
+			addNodeToQueue(nextNode, queueIndex, seenNodeIndex, score, keyNode, data)
 		}
 	}
 }
