@@ -50,8 +50,8 @@ func (solution *Solution) GetRandomSolutionBySize(db *gorm.DB, size int) error {
 	return db.Model(&Solution{}).Order("RANDOM()").Where("size = ?", size).Limit(1).First(&solution).Error
 }
 
-func (solution *Solution) GetSolutionByHash(db *gorm.DB, hash string) error {
-	return db.Model(&Solution{}).Where("hash = ?", hash).First(solution).Error
+func (solution *Solution) GetSolutionByHash(db *gorm.DB, hash string, disposition string) error {
+	return db.Model(&Solution{}).Where("hash = ?", hash).Where("disposition = ?", disposition).First(solution).Error
 }
 
 func (solution *Solution) UpdateOrCreateSolution(db *gorm.DB) error {

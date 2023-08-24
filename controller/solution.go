@@ -21,6 +21,7 @@ type SolveRequest struct {
 	Size            int    `json:"size"`
 	Board           string `json:"board"`
 	PreviousCompute bool   `json:"previousCompute"`
+	Disposition     string `json:"disposition"`
 }
 
 type Repository struct {
@@ -47,14 +48,14 @@ func (repo *Repository) removeStringInputFromJobs(input string) (err error) {
 	}
 }
 
-func GetSolutionByStringInput(solution *models.Solution, db *gorm.DB, stringInput string) error {
+func GetSolutionByStringInput(solution *models.Solution, db *gorm.DB, stringInput string, disposition string) error {
 	scanner := bufio.NewScanner(strings.NewReader(stringInput))
 	board, err := algo.ParseInput(scanner)
 	if err != nil {
 		return err
 	}
 	hash := algo.MatrixToStringHashOnly(board, ".")
-	return solution.GetSolutionByHash(db, hash)
+	return solution.GetSolutionByHash(db, hash, disposition)
 }
 
 func (repo *Repository) Solve(c *gin.Context) {
@@ -82,9 +83,9 @@ func (repo *Repository) Solve(c *gin.Context) {
 		c.IndentedJSON(http.StatusOK, gin.H{"status": "RUNNING"})
 		return
 	}
-	if err := GetSolutionByStringInput(solution, repo.DB, opt.StringInput); err == nil && newRequest.PreviousCompute {
+	if err := GetSolutionByStringInput(solution, repo.DB, opt.StringInput, newRequest.Disposition); err == nil && newRequest.PreviousCompute {
 		fmt.Fprintln(os.Stderr, "Found entry in DB !")
-		c.IndentedJSON(http.StatusOK, gin.H{"status": "DB", "solution": solution.Path, "time" : time.Duration(solution.ComputeMs * 1000).String(), "algo" : solution.Algo})
+		c.IndentedJSON(http.StatusOK, gin.H{"status": "DB", "solution": solution.Path, "time": time.Duration(solution.ComputeMs * 1000).String(), "algo": solution.Algo})
 		if err := repo.removeStringInputFromJobs(opt.StringInput); err != nil {
 			fmt.Fprintln(os.Stderr, "Failure removing grid from running jobs")
 		}
@@ -156,7 +157,7 @@ func (repo *Repository) GetSolution(c *gin.Context) {
 	}
 	fmt.Fprintln(os.Stderr, "Received request :", newRequest)
 	StringInput := strconv.Itoa(newRequest.Size) + " " + newRequest.Board
-	if err := GetSolutionByStringInput(solution, repo.DB, StringInput); err == nil {
+	if err := GetSolutionByStringInput(solution, repo.DB, StringInput, newRequest.Disposition); err == nil {
 		fmt.Fprintln(os.Stderr, "Found entry in DB !")
 		c.IndentedJSON(http.StatusOK, gin.H{"status": "DB", "solution": solution.Path})
 		return
