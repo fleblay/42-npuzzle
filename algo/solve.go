@@ -123,7 +123,7 @@ func generateSolutionEntity(param AlgoParameters, algoResult Result, elapsed tim
 		Workers:     param.Workers,
 		Split:       param.SeenNodesSplit,
 		Disposition: "snail",
-		ComputeMs:   elapsed.Milliseconds(),
+		ComputeMs:   elapsed.Microseconds(),
 	}
 	return &solution
 }
@@ -136,10 +136,6 @@ func Solve(opt *Option) (result [3]string, solution *models.Solution) {
 	}
 	if err := setParam(opt, &param); err != nil {
 		return [3]string{"PARAM", err.Error()}, nil
-	}
-	if param.Unsolvable {
-		fmt.Fprintln(os.Stderr, "Board is unsolvable", param.Board)
-		return [3]string{"UNSOLVABLE"}, nil
 	}
 	fmt.Fprintf(os.Stderr, "Board is : %v\nNow starting with : %v\n", param.Board, param.Eval.Name)
 	start := time.Now()

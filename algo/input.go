@@ -71,7 +71,7 @@ func readInputArray(scanner *bufio.Scanner) (inputArray []int, err error) {
 			if err != nil || num < 0 {
 				return nil, errors.New("Error parsing input : Atoi Error or number < 0")
 			} else if alreadyInArray(inputArray, num) {
-				return nil, errors.New("Error parsing input : duplicate number")
+				return nil, errors.New(fmt.Sprintf("Error parsing input : duplicate number %d", num))
 			}
 			inputArray = append(inputArray, num)
 		}

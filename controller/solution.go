@@ -9,6 +9,7 @@ import (
 	"runtime/debug"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/fleblay/42-npuzzle/algo"
 	"github.com/fleblay/42-npuzzle/models"
@@ -71,6 +72,11 @@ func (repo *Repository) Solve(c *gin.Context) {
 	}
 	fmt.Fprintln(os.Stderr, "Received request :", newRequest)
 	opt.StringInput = strconv.Itoa(newRequest.Size) + " " + newRequest.Board
+	if len(*repo.Jobs) > 0 && (repo.Algo == "A*" || repo.Algo == "default") {
+		fmt.Fprintln(os.Stderr, "Server already running an A* job")
+		c.IndentedJSON(http.StatusOK, gin.H{"status": "BUSY"})
+		return
+	}
 	if err := repo.addStringInputToJobs(opt.StringInput); err != nil {
 		fmt.Fprintln(os.Stderr, "Grid already being processed !")
 		c.IndentedJSON(http.StatusOK, gin.H{"status": "RUNNING"})
@@ -78,12 +84,12 @@ func (repo *Repository) Solve(c *gin.Context) {
 	}
 	if err := GetSolutionByStringInput(solution, repo.DB, opt.StringInput); err == nil && newRequest.PreviousCompute {
 		fmt.Fprintln(os.Stderr, "Found entry in DB !")
-		c.IndentedJSON(http.StatusOK, gin.H{"status": "DB", "solution": solution.Path})
+		c.IndentedJSON(http.StatusOK, gin.H{"status": "DB", "solution": solution.Path, "time" : time.Duration(solution.ComputeMs * 1000).String(), "algo" : solution.Algo})
 		if err := repo.removeStringInputFromJobs(opt.StringInput); err != nil {
 			fmt.Fprintln(os.Stderr, "Failure removing grid from running jobs")
 		}
 		return
-	} else if err != nil{
+	} else if err != nil {
 		fmt.Fprintf(os.Stderr, "No entry found in DB (%s) processing request\n", err.Error())
 	}
 	result, solution = algo.Solve(opt)
