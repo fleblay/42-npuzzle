@@ -17,8 +17,9 @@ import (
 )
 
 type SolveRequest struct {
-	Size  int    `json:"size"`
-	Board string `json:"board"`
+	Size            int    `json:"size"`
+	Board           string `json:"board"`
+	PreviousCompute bool   `json:"previousCompute"`
 }
 
 type Repository struct {
@@ -66,18 +67,23 @@ func (repo *Repository) Solve(c *gin.Context) {
 	var newRequest SolveRequest
 	if err := c.BindJSON(&newRequest); err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"msg": "Wrong Format : " + err.Error()})
+		return
 	}
 	fmt.Fprintln(os.Stderr, "Received request :", newRequest)
 	opt.StringInput = strconv.Itoa(newRequest.Size) + " " + newRequest.Board
 	if err := repo.addStringInputToJobs(opt.StringInput); err != nil {
 		fmt.Fprintln(os.Stderr, "Grid already being processed !")
 		c.IndentedJSON(http.StatusOK, gin.H{"status": "RUNNING"})
+		return
 	}
-	if err := GetSolutionByStringInput(solution, repo.DB, opt.StringInput); err == nil {
+	if err := GetSolutionByStringInput(solution, repo.DB, opt.StringInput); err == nil && newRequest.PreviousCompute {
 		fmt.Fprintln(os.Stderr, "Found entry in DB !")
 		c.IndentedJSON(http.StatusOK, gin.H{"status": "DB", "solution": solution.Path})
+		if err := repo.removeStringInputFromJobs(opt.StringInput); err != nil {
+			fmt.Fprintln(os.Stderr, "Failure removing grid from running jobs")
+		}
 		return
-	} else {
+	} else if err != nil{
 		fmt.Fprintf(os.Stderr, "No entry found in DB (%s) processing request\n", err.Error())
 	}
 	result, solution = algo.Solve(opt)
@@ -102,7 +108,7 @@ func (repo *Repository) Solve(c *gin.Context) {
 		"fallback": fallback,
 		"workers":  opt.Workers,
 	})
-	if err := repo.removeStringInputFromJobs(opt.StringInput); err != nil {
+	if repo.removeStringInputFromJobs(opt.StringInput) != nil {
 		fmt.Fprintln(os.Stderr, "Failure removing grid from running jobs")
 	}
 	debug.FreeOSMemory()
