@@ -126,7 +126,7 @@ func generateSolutionEntity(param AlgoParameters, algoResult Result, elapsed tim
 		Solvable:    true,
 		Workers:     param.Workers,
 		Split:       param.SeenNodesSplit,
-		Disposition: "snail",
+		Disposition: param.Disposition,
 		ComputeMs:   elapsed.Microseconds(),
 	}
 	return &solution

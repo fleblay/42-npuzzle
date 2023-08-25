@@ -1,9 +1,11 @@
 package algo
 
+/*
 import (
 	"fmt"
 	"os"
 )
+*/
 
 func matrixToTableSnail(matrix [][]int) []int {
 	boardSize := len(matrix)
@@ -64,10 +66,10 @@ func isSolvableZeroLast(board [][]int) (ok bool, inversions int) {
 		}
 	}
 	if odd {
-		fmt.Fprintln(os.Stderr, "grid size is odd and inversion count is", inversions)
+		//fmt.Fprintln(os.Stderr, "grid size is odd and inversion count is", inversions)
 		return inversions%2 == 0, inversions
 	} else {
-		fmt.Fprintln(os.Stderr, "grid size is odd and inversion count is", inversions, "and pos 0 from bottom is odd ? : ", oddRowCountFromBottomToZero)
+		//fmt.Fprintln(os.Stderr, "grid size is odd and inversion count is", inversions, "and pos 0 from bottom is odd ? : ", oddRowCountFromBottomToZero)
 		if (!oddRowCountFromBottomToZero && (inversions%2 == 1)) ||
 			(oddRowCountFromBottomToZero && (inversions%2 == 0)) {
 			return true, inversions
