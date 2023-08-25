@@ -39,6 +39,9 @@ func areFlagsOk(opt *Option) (err error) {
 	if opt.RAMMaxGB < 1 || opt.RAMMaxGB > 64 {
 		return errors.New("Invalid Max Ram GB (must be between 1 and 32GB")
 	}
+	if opt.Disposition != "snail" && opt.Disposition != "zerolast" {
+		return errors.New("Invalid disposition")
+	}
 	for _, current := range Evals {
 		if current.Name == opt.Heuristic {
 			return nil
@@ -50,6 +53,7 @@ func areFlagsOk(opt *Option) (err error) {
 func setParam(opt *Option, param *AlgoParameters) (err error) {
 	param.Workers = opt.Workers
 	param.SeenNodesSplit = opt.SeenNodesSplit
+	param.Disposition = opt.Disposition
 	for _, current := range Evals {
 		if current.Name == opt.Heuristic {
 			param.Eval = current
@@ -79,14 +83,14 @@ func setParam(opt *Option, param *AlgoParameters) (err error) {
 		param.Board, err = ParseInput(scanner)
 	} else if opt.MapSize > 0 {
 		fmt.Fprintln(os.Stderr, "Generating a map with size", opt.MapSize)
-		param.Board = GridGenerator(opt.MapSize)
+		param.Board = GridGenerator(opt.MapSize, param.Disposition)
 	} else {
 		return errors.New("No valid filename, stringMap or mapSize")
 	}
 	if err != nil {
 		return err
 	}
-	if ok, _ := IsSolvable(param.Board); !ok {
+	if ok, _ := IsSolvable(param.Board, param.Disposition); !ok {
 		fmt.Fprintln(os.Stderr, "Board is not solvable")
 		param.Unsolvable = true
 		return errors.New("Board is not solvable")

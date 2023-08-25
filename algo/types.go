@@ -38,9 +38,9 @@ func BoardToUint64(board [][]int) (res uint64) {
 
 func Uint64ToBoard(flat uint64, size int) (board [][]int) {
 	board = make([][]int, size)
-	for i := size -1 ; i >= 0; i-- {
+	for i := size - 1; i >= 0; i-- {
 		board[i] = make([]int, size)
-		for j := size -1; j >= 0; j-- {
+		for j := size - 1; j >= 0; j-- {
 			board[i][j] = int(flat & 15)
 			flat >>= 4
 		}
@@ -70,6 +70,7 @@ type Option struct {
 	DisableUI        bool
 	StringInput      string
 	RAMMaxGB         uint64
+	Disposition      string
 }
 
 type Result struct {
@@ -81,11 +82,10 @@ type Result struct {
 }
 
 type idaData struct {
-	Fx       EvalFx
-	MaxScore int
-	Path     []byte
-	States   [][][]int
-	//Hashes              []string
+	Fx                  EvalFx
+	MaxScore            int
+	Path                []byte
+	States              [][][]int
 	Hashes              []uint64
 	Goal                [][]int
 	ClosedSetComplexity int
@@ -97,8 +97,7 @@ type safeData struct {
 	MuQueue  []sync.Mutex
 	PosQueue []*PriorityQueue
 
-	MuSeen []sync.Mutex
-	//SeenNodes    []map[string]int
+	MuSeen       []sync.Mutex
 	SeenNodes    []map[uint64]int
 	Tries        int
 	MaxSizeQueue []int
@@ -121,4 +120,5 @@ type AlgoParameters struct {
 	Board          [][]int
 	Unsolvable     bool
 	RAMMaxGB       uint64
+	Disposition    string
 }

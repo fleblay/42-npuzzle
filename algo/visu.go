@@ -78,7 +78,7 @@ func DisplayBoard(board [][]int, path []byte, elvalName string, times string, tr
 	<-uiEvents
 }
 
-func playBoard(board [][]int) bool {
+func playBoard(board [][]int, disposition string) bool {
 	if err := ui.Init(); err != nil {
 		log.Fatalf("failed to initialize termui: %v", err)
 	}
@@ -103,7 +103,7 @@ func playBoard(board [][]int) bool {
 		case "a":
 			moveRight(board)
 		}
-		if isEqual(board, Goal(len(board))) {
+		if isEqual(board, Goal(len(board), disposition)) {
 			return handleWinScenario()
 		}
 		table.Rows = convertBoard(board)

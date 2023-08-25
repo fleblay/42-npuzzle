@@ -71,6 +71,7 @@ func (repo *Repository) Solve(c *gin.Context) {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"msg": "Wrong Format : " + err.Error()})
 		return
 	}
+	opt.Disposition = newRequest.Disposition
 	fmt.Fprintln(os.Stderr, "Received request :", newRequest)
 	opt.StringInput = strconv.Itoa(newRequest.Size) + " " + newRequest.Board
 	if len(*repo.Jobs) > 0 && (repo.Algo == "A*" || repo.Algo == "default") {
@@ -123,10 +124,14 @@ func (repo *Repository) Solve(c *gin.Context) {
 
 func (repo *Repository) Generate(c *gin.Context) {
 	size, err := strconv.Atoi(c.Param("size"))
+	disposition := c.Param("disposition")
+	if disposition != "snail" && disposition != "zerolast" {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"msg": "Wrong Format : " + "Wrong disposition"})
+	}
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"msg": "Wrong Format : " + err.Error()})
 	}
-	board := algo.MatrixToStringHashOnly(algo.GridGenerator(size), " ")
+	board := algo.MatrixToStringHashOnly(algo.GridGenerator(size, disposition), " ")
 	c.IndentedJSON(http.StatusOK, gin.H{"size": size, "board": board})
 }
 

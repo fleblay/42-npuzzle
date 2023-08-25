@@ -6,12 +6,12 @@ import (
 )
 
 func initDataIDA(param AlgoParameters) (data idaData) {
-	data.MaxScore = param.Eval.Fx(param.Board, param.Board, Goal(len(param.Board)), []byte{})
+	data.Goal = Goal(len(param.Board), param.Disposition)
+	data.MaxScore = param.Eval.Fx(param.Board, param.Board, data.Goal, []byte{})
 	data.States = append(data.States, Deep2DSliceCopy(param.Board))
 	hash, _, _ := MatrixToStringSelector(param.Board, 1, 1)
 	data.Hashes = append(data.Hashes, hash)
 	data.Fx = param.Eval.Fx
-	data.Goal = Goal(len(param.Board))
 	return
 }
 

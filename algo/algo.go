@@ -106,7 +106,7 @@ func checkOptimalSolution(currentNode *Item, data *safeData) bool {
 }
 
 func algo(param AlgoParameters, data *safeData, workerIndex int) {
-	goalPos := Goal(len(param.Board))
+	goalPos := Goal(len(param.Board), param.Disposition)
 	startPos := param.Board
 	var foundSol *Item
 	startAlgo := time.Now()

@@ -50,6 +50,7 @@ func parseFlags(opt *algo.Option) {
 	flagSet.BoolVar(&opt.Debug, "d", false, "usage : -d. Activate debug info")
 	flagSet.BoolVar(&opt.DisableUI, "no-ui", false, "usage : -no-ui. Disable pretty display of solution")
 	flagSet.Uint64Var(&opt.RAMMaxGB, "ram", 8, "usage : -ram [MaxRamGb] between 1 and 16")
+	flagSet.StringVar(&opt.Disposition, "dispo", "snail", "usage : -dispo [snail | zerolast]")
 
 	flagSet.Parse(os.Args[1:])
 }
@@ -77,7 +78,7 @@ func main() {
 		router.POST("/solve/ida", repoIDA.Solve)
 		router.POST("/solve/astar", repoASTAR.Solve)
 		router.POST("/solution", repo.GetSolution)
-		router.GET("/generate/:size", repo.Generate)
+		router.GET("/generate/:size/:disposition", repo.Generate)
 		router.GET("/pick/:size", repo.GetRandomFromDB)
 
 		listen := os.Getenv("LISTEN")
@@ -93,8 +94,8 @@ func main() {
 		var wg sync.WaitGroup
 		go func() {
 			fmt.Println(http.ListenAndServe("localhost:6060", nil))
+			wg.Add(1)
 		}()
-		wg.Add(1)
 		opt := &algo.Option{}
 		parseFlags(opt)
 		res, _ := algo.Solve(opt)
