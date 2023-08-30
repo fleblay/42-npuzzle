@@ -158,7 +158,7 @@ func (repo *Repository) GetSolution(c *gin.Context) {
 	StringInput := strconv.Itoa(newRequest.Size) + " " + newRequest.Board
 	if err := GetSolutionByStringInput(solution, repo.DB, StringInput, newRequest.Disposition); err == nil {
 		fmt.Fprintln(os.Stderr, "Found entry in DB !")
-		c.IndentedJSON(http.StatusOK, gin.H{"status": "DB", "solution": solution.Path})
+		c.IndentedJSON(http.StatusOK, gin.H{"status": "DB", "solution": solution.Path, "time": time.Duration(solution.ComputeMs * 1000).String(), "algo": solution.Algo})
 		return
 	} else {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"status": "NOTFOUND"})

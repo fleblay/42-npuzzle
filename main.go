@@ -76,7 +76,6 @@ func main() {
 		//Should ONLY be used for testing in dev env
 		//router.Use(cors.Default())
 
-		//router.POST("/solve/default", repo.Solve)
 		router.POST("/solve/ida", repoIDA.Solve)
 		router.POST("/solve/astar", repoASTAR.Solve)
 		router.POST("/solution", repoIDA.GetSolution)
