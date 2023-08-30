@@ -74,7 +74,7 @@ func (repo *Repository) Solve(c *gin.Context) {
 	opt.Disposition = newRequest.Disposition
 	fmt.Fprintln(os.Stderr, "Received request :", newRequest)
 	opt.StringInput = strconv.Itoa(newRequest.Size) + " " + newRequest.Board
-	if len(*repo.Jobs) > 0 && (repo.Algo == "A*" || repo.Algo == "default") {
+	if len(*repo.Jobs) > 0 && repo.Algo == "A*"{
 		fmt.Fprintln(os.Stderr, "Server already running an A* job")
 		c.IndentedJSON(http.StatusOK, gin.H{"status": "BUSY"})
 		return
@@ -95,13 +95,7 @@ func (repo *Repository) Solve(c *gin.Context) {
 		fmt.Fprintf(os.Stderr, "No entry found in DB (%s) processing request\n", err.Error())
 	}
 	result, solution = algo.Solve(opt)
-	if result[0] == "RAM" && opt.NoIterativeDepth == true && repo.Algo == "default" {
-		fmt.Fprintln(os.Stderr, "Solver killed because of RAM, trying again with IDA*")
-		repo.Algo = "fallback_IDA"
-		opt.NoIterativeDepth = false
-		fallback = true
-		result, solution = algo.Solve(opt)
-	} else if result[0] == "OK" {
+	if result[0] == "OK" {
 		if err := solution.UpdateOrCreateSolution(repo.DB); err != nil {
 			fmt.Fprintln(os.Stderr, "Failure to save new solution to DB")
 		}

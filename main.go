@@ -3,15 +3,18 @@ package main
 import (
 	"flag"
 	"fmt"
-	"sync"
 
 	"github.com/fleblay/42-npuzzle/algo"
 	"github.com/fleblay/42-npuzzle/controller"
 	"github.com/fleblay/42-npuzzle/database"
 	"github.com/gin-gonic/gin"
 
+	//FOR CORS
 	//cors "github.com/rs/cors/wrapper/gin"
-	"net/http"
+
+	//FOR PPROF
+	//"net/http"
+	//"sync"
 	_ "net/http/pprof"
 	"os"
 	"os/signal"
@@ -64,22 +67,21 @@ func main() {
 		count, err := database.CreateModel(db)
 		fmt.Printf("Successfully connected to DB with %d items\n", count)
 		handleFatalError(err)
-		jobs := []string{}
-		repoASTAR := controller.Repository{DB: db, Algo: "A*", Jobs: &jobs}
-		repoIDA := controller.Repository{DB: db, Algo: "IDA", Jobs: &jobs}
-		repo := controller.Repository{DB: db, Algo: "default", Jobs: &jobs}
+		repoASTAR := controller.Repository{DB: db, Algo: "A*", Jobs: &[]string{}}
+		repoIDA := controller.Repository{DB: db, Algo: "IDA", Jobs: &[]string{}}
 
 		gin.SetMode(gin.ReleaseMode)
 		router := gin.Default()
+
 		//Should ONLY be used for testing in dev env
 		//router.Use(cors.Default())
 
-		router.POST("/solve/default", repo.Solve)
+		//router.POST("/solve/default", repo.Solve)
 		router.POST("/solve/ida", repoIDA.Solve)
 		router.POST("/solve/astar", repoASTAR.Solve)
-		router.POST("/solution", repo.GetSolution)
-		router.GET("/generate/:size/:disposition", repo.Generate)
-		router.GET("/pick/:size", repo.GetRandomFromDB)
+		router.POST("/solution", repoIDA.GetSolution)
+		router.GET("/generate/:size/:disposition", repoIDA.Generate)
+		router.GET("/pick/:size", repoIDA.GetRandomFromDB)
 
 		listen := os.Getenv("LISTEN")
 		if listen != "" {
@@ -91,15 +93,17 @@ func main() {
 		}
 		handleFatalError(err)
 	} else {
+		/*
 		var wg sync.WaitGroup
 		go func() {
 			fmt.Println(http.ListenAndServe("localhost:6060", nil))
 			wg.Add(1)
 		}()
+		*/
 		opt := &algo.Option{}
 		parseFlags(opt)
 		res, _ := algo.Solve(opt)
 		fmt.Println(res)
-		wg.Wait()
+		//wg.Wait()
 	}
 }
