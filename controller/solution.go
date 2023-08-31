@@ -22,6 +22,7 @@ type SolveRequest struct {
 	Board           string `json:"board"`
 	PreviousCompute bool   `json:"previousCompute"`
 	Disposition     string `json:"disposition"`
+	QuickSolve      bool   `json:"quickSolve"`
 }
 
 type Repository struct {
@@ -62,8 +63,6 @@ func (repo *Repository) Solve(c *gin.Context) {
 	debug.FreeOSMemory()
 	opt := &algo.Option{}
 	algo.InitOptionForApiUse(opt, repo.Algo)
-	var result [3]string
-	fallback := false
 	solution := &models.Solution{}
 
 	var newRequest SolveRequest
@@ -72,9 +71,12 @@ func (repo *Repository) Solve(c *gin.Context) {
 		return
 	}
 	opt.Disposition = newRequest.Disposition
+	if newRequest.QuickSolve {
+		opt.Heuristic = "astar_manhattan_conflict1.3"
+	}
 	fmt.Fprintln(os.Stderr, "Received request :", newRequest)
 	opt.StringInput = strconv.Itoa(newRequest.Size) + " " + newRequest.Board
-	if len(*repo.Jobs) > 0 && repo.Algo == "A*"{
+	if len(*repo.Jobs) > 0 && repo.Algo == "A*" {
 		fmt.Fprintln(os.Stderr, "Server already running an A* job")
 		c.IndentedJSON(http.StatusOK, gin.H{"status": "BUSY"})
 		return
@@ -94,8 +96,8 @@ func (repo *Repository) Solve(c *gin.Context) {
 	} else if err != nil {
 		fmt.Fprintf(os.Stderr, "No entry found in DB (%s) processing request\n", err.Error())
 	}
-	result, solution = algo.Solve(opt)
-	if result[0] == "OK" {
+	result, solution := algo.Solve(opt)
+	if result[0] == "OK" && !newRequest.QuickSolve {
 		if err := solution.UpdateOrCreateSolution(repo.DB); err != nil {
 			fmt.Fprintln(os.Stderr, "Failure to save new solution to DB")
 		}
@@ -107,7 +109,6 @@ func (repo *Repository) Solve(c *gin.Context) {
 		"solution": result[1],
 		"time":     result[2],
 		"algo":     repo.Algo,
-		"fallback": fallback,
 		"workers":  opt.Workers,
 	})
 	if repo.removeStringInputFromJobs(opt.StringInput) != nil {

@@ -16,7 +16,7 @@ import (
 func InitOptionForApiUse(opt *Option, algo string) {
 	opt.DisableUI = true
 	opt.Heuristic = "astar_manhattan_conflict"
-	if algo == "A*" || algo == "default" {
+	if algo == "A*" {
 		opt.NoIterativeDepth = true
 	}
 	opt.Workers = 8
